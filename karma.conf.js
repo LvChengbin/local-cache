@@ -19,7 +19,7 @@ for( let i = 0; i < 1000; i += 1 ) {
     } );
 }
 
-fs.writeFileSync( 'test/md5-cases.js', 'export default ' + JSON.stringify( list ), 'utf8', err => {
+fs.writeFileSync( 'test/md5-cases.js', 'export default ' + JSON.stringify( list, null, 4 ), 'utf8', err => {
     if( err ) {
         console.log( 'Error', err );
     }

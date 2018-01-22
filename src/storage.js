@@ -42,7 +42,6 @@ export default class Storage {
 
     validate( data, options = {} ) {
         if( data.lifetime ) {
-            console.log( +new Date, data.ctime, data.lifetime, new Date - data.ctime );
             if( new Date - data.ctime >= data.lifetime ) {
                 return false;
             }

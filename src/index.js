@@ -1,5 +1,5 @@
 import Sequence from '@lvchengbin/sequence';
-import md5 from './md5';
+import isObject from '@lvchengbin/is/src/object';
 import Memory from './memory';
 import SessionStorage from './session-storage';
 import Persistent from './persistent';
@@ -13,35 +13,28 @@ const supportedModes = [
     'persistent'
 ];
 
-const LocalCache = {
-    page : new Memory(),
-    session : new SessionStorage(),
-    persistent : new Persistent(),
+class LocalCache {
+    constructor( name ) {
+        this.page = new Memory( name );
+        this.session = new SessionStorage( name );
+        this.persistent = new Persistent( name );
+    }
     set( key, data, options ) {
 
         const steps = [];
 
         for( let mode of supportedModes ) {
-            const opts = options[ mode ];
             if( !options[ mode ] ) continue;
 
-            const input = {
-                data,
-                priority : opts.priority === undefined ? 50 : opts.priority,
-                ctime : +new Date,
-                lifetime : opts.lifetime || 0
-            };
+            let opts = options[ mode ];
 
-            if( opts.md5 ) {
-                // to calculate the md5 value of data string.
-                input.md5 = md5( JSON.stringify( data ) );
+            if( opts === false ) continue;
+
+            if( !isObject( opts ) ) {
+                opts = {};
             }
-
-            if( opts.cookie ) {
-                input.cookie = md5( document.cookie );
-            }
-
-            steps.push( () => this[ mode ].set( key, input ) );
+            
+            steps.push( () => this[ mode ].set( key, data, opts ) );
         }
 
         if( !steps.length ) {
@@ -49,7 +42,7 @@ const LocalCache = {
         }
 
         return Sequence.all( steps ).then( () => data );
-    },
+    }
 
     get( key, modes, options = {} ) {
         modes || ( modes = supportedModes );
@@ -66,7 +59,7 @@ const LocalCache = {
         return Sequence.any( steps ).then( results => {
             return results[ results.length - 1 ].value;
         } );
-    },
+    }
 
     delete( key, modes ) {
         modes || ( modes = supportedModes );
@@ -81,7 +74,7 @@ const LocalCache = {
         }
 
         return Sequence.all( steps );
-    },
+    }
 
     clear( modes ) {
         modes || ( modes = supportedModes );
@@ -96,7 +89,7 @@ const LocalCache = {
         }
 
         return Sequence.all( steps );
-    },
+    }
 
     clean() {
         const steps = [];
@@ -106,6 +99,6 @@ const LocalCache = {
         return Promise.all( steps );
     }
 
-};
+}
 
 export default LocalCache;

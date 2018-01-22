@@ -4,7 +4,13 @@ import is from '@lvchengbin/is';
 import md5 from './md5';
 
 export default class Storage {
-    constructor() {
+    constructor( name ) {
+        if( !name ) {
+            throw new TypeError( `Expect a name for the storage, but a(n) ${name} is given.` );
+        }
+
+        this.name = `#LC-STORAGE-V-1.0#${name}#`;
+
         const abstracts = [ 'set', 'get', 'delete', 'clear', 'keys' ];
 
         for( let method of abstracts ) {
@@ -15,8 +21,28 @@ export default class Storage {
         }
     }
 
+    format( data, options = {} ) {
+        const input = {
+            data,
+            priority : options.priority === undefined ? 50 : options.priority,
+            ctime : +new Date,
+            lifetime : options.lifetime || 0
+        };
+
+        if( options.md5 ) {
+            input.md5 = md5( JSON.stringify( data ) )
+        }
+
+        if( options.cookie ) {
+            input.cookie = md5( document.cookie );
+        }
+
+        return input;
+    }
+
     validate( data, options = {} ) {
         if( data.lifetime ) {
+            console.log( +new Date, data.ctime, data.lifetime, new Date - data.ctime );
             if( new Date - data.ctime >= data.lifetime ) {
                 return false;
             }
@@ -30,6 +56,9 @@ export default class Storage {
 
         if( data.md5 && options.md5 ) {
             if( data.md5 !== options.md5 ) {
+                return false;
+            }
+            if( md5( data.data ) !== options.md5 ) {
                 return false;
             }
         }

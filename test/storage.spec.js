@@ -15,30 +15,26 @@ describe( 'Storage', () => {
     const test = ( name, Storage ) => {
 
         describe( name, () => {
-            const input = {
-                data : 'data',
-                ctime : +new Date,
-                md5 : '328dsjfashfsjafokjf',
+            const options = {
                 lifetime : 2000,
-                cookie : 'dsjkfajlkfjdaskfjaslfs',
                 priority : 6
             };
             it( 'set', async done => {
-                const storage = new Storage();
-                await storage.set( 'key', input ).catch( e => {
+                const storage = new Storage( 'test-1' );
+                await storage.set( 'key', 'data', options ).catch( e => {
                     console.log( 'Set error: ', e );
                 } );
                 const data = await storage.get( 'key' ).catch( e => {
                     console.log( 'Get error: ', e );
                 } );
 
-                expect( data ).toEqual( input );
+                expect( data.data ).toEqual( 'data' );
                 done();
             } );
 
             it( 'delete', async done => {
-                const storage = new Storage();
-                await storage.set( 'key', input ).catch( e => {
+                const storage = new Storage( 'test-2' );
+                await storage.set( 'key', 'data', options ).catch( e => {
                     console.log( 'Set error: ', e );
                 } );
                 await storage.delete( 'key' ).catch( e => {
@@ -50,7 +46,7 @@ describe( 'Storage', () => {
             } );
 
             it( 'keys', async done => {
-                const storage = new Storage();
+                const storage = new Storage( 'test-3' );
                 await storage.set( 'key1', 'value' );
                 await storage.set( 'key2', 'value' );
                 storage.keys().then( keys => {
@@ -60,9 +56,9 @@ describe( 'Storage', () => {
             } );
 
             it( 'clear', async done => {
-                const storage = new Storage();
-                await storage.set( 'key1', input );
-                await storage.set( 'key2', input );
+                const storage = new Storage( 'test-4' );
+                await storage.set( 'key1', 'data', options );
+                await storage.set( 'key2', 'data', options );
                 await storage.clear().catch( e => {
                     console.log( 'Clear error: ', e );
                 } );
@@ -72,6 +68,65 @@ describe( 'Storage', () => {
                 } ).catch( e => {
                     console.log( 'Get keys error: ', e );
                 } );
+            } );
+        } );
+
+        it( 'validating lifetime', async done => {
+            const options = {
+                lifetime : 50,
+                priority : 6
+            };
+
+            const storage = new Storage( 'test-5' );
+
+            await storage.set( 'key', 'data', options ).catch( e => {
+                console.log( 'Set error: ', e );
+            } );
+
+            setTimeout( () => {
+                storage.get( 'key' ).catch( () => {
+                    done();
+                } );
+            }, 51 );
+        } );
+
+        it( 'validating cookie', async done => {
+            const options = {
+                lifetime : 50,
+                priority : 6,
+                cookie : true
+            };
+
+            const storage = new Storage( 'test-6' );
+
+            await storage.set( 'key', 'data', options ).catch( e => {
+                console.log( 'Set error: ', e );
+            } );
+
+            document.cookie = 'x=' + +new Date;
+
+            storage.get( 'key' ).catch( () => {
+                done();
+            } );
+        } );
+
+        it( 'validating md5', async done => {
+
+            const options = {
+                lifetime : 50,
+                priority : 6,
+                cookie : true,
+                md5 : true
+            };
+
+            const storage = new Storage( 'test-7' );
+
+            await storage.set( 'key2', 'data', options ).catch( e => {
+                console.log( 'Set error: ', e );
+            } );
+
+            storage.get( 'key', { md5 : 'xxxx' } ).catch( () => {
+                done();
             } );
         } );
     };

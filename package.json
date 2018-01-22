@@ -54,8 +54,8 @@
   "author": "LvChengbin",
   "license": "MIT",
   "dependencies": {
-    "@lvchengbin/is": "0.0.1",
+    "@lvchengbin/is": "0.0.8",
     "@lvchengbin/promise": "^1.0.10",
-    "@lvchengbin/sequence": "0.0.3"
+    "@lvchengbin/sequence": "0.1.1"
   }
 }

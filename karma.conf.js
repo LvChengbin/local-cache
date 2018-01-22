@@ -11,8 +11,8 @@ const resolve = require( 'rollup-plugin-node-resolve' );
 
 // generate a list for testing md5 function
 const list = [];
-for( let i = 0; i < 5000; i += 1 ) {
-    const str = randomstring.generate( ~~( Math.random() * 1000 ) );
+for( let i = 0; i < 1000; i += 1 ) {
+    const str = randomstring.generate( ~~( Math.random() * 500 ) );
     list.push( {
         str,
         md5 : crypto.createHash( 'md5' ).update( str ).digest( 'hex' )

@@ -1,15 +1,12 @@
 import Storage from './storage';
 
 export default class IDB extends Storage {
-    constructor( database, version = 1 ) {
-        super();
-        if( !database ) {
-            database = 'LC-STORAGE-V-1.0';
-        }
+    constructor( name ) {
+        super( name );
 
         this.idb = null;
 
-        this.ready = this.open( database, version ).then( () => {
+        this.ready = this.open().then( () => {
             this.idb.onerror = e => {
                 console.warn( 'IDB Error', e );
             };
@@ -18,9 +15,9 @@ export default class IDB extends Storage {
 
     }
 
-    open( database, version ) {
+    open() {
 
-        const request = window.indexedDB.open( database, version );
+        const request = window.indexedDB.open( this.name );
 
         return new Promise( ( resolve, reject ) => {
 
@@ -57,7 +54,9 @@ export default class IDB extends Storage {
         return this.idb.transaction( [ 'storage' ], write ? 'readwrite' : 'readonly' ).objectStore( 'storage' );
     }
 
-    set( key, data ) {
+    set( key, data, options = {} ) {
+
+        data = this.format( data, options );
 
         return this.ready.then( () => {
             return new Promise( ( resolve, reject ) => {

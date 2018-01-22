@@ -2,31 +2,28 @@ import Promise from '@lvchengbin/promise';
 import Storage from './storage';
 
 export default class Memory extends Storage {
-    constructor() {
-        super();
+    constructor( name ) {
+        super( name );
         this.data = {};
     }
 
-    set( key, data ) {
+    set( key, data, options = {} ) {
+        data = this.format( data, options );
         this.data[ key ] = data;
         return Promise.resolve( data );
     }
 
     get( key, options = {} ) {
-        if( !this.data.hasOwnProperty( key ) ) {
-            return Promise.reject();
-        }
-
         const data = this.data[ key ];
 
         if( !data ) return Promise.reject();
 
-        if( this.valdate( data, options ) === false ) {
-            this.data( key );
+        if( this.validate( data, options ) === false ) {
+            this.delete( key );
             return Promise.reject();
         }
 
-        return Promise.resolve( this.data[ key ] );
+        return Promise.resolve( data );
     }
 
     delete( key ) {

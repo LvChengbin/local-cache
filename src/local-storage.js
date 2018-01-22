@@ -2,14 +2,14 @@ import Promise from '@lvchengbin/promise';
 import Storage from './storage';
 
 export default class LocalStorage extends Storage {
-    constructor( options = {} ) {
-        super();
-        this.prefix = options.prefix || '#LC-STORAGE-V-1.0#';
+    constructor( name ) {
+        super( name );
     }
 
-    set( key, data ) {
+    set( key, data, options = {} ) {
+        data = this.format( data, options );
         try {
-            localStorage.setItem( this.prefix + key, JSON.stringify( data ) );
+            localStorage.setItem( this.name + key, JSON.stringify( data ) );
             return Promise.resolve( data );
         } catch( e ) {
             return Promise.reject( e );
@@ -20,7 +20,7 @@ export default class LocalStorage extends Storage {
         let data;
         
         try {
-            data = JSON.parse( localStorage.getItem( this.prefix + key ) );
+            data = JSON.parse( localStorage.getItem( this.name + key ) );
 
             if( !data ) return Promise.reject();
 
@@ -37,7 +37,7 @@ export default class LocalStorage extends Storage {
     }
 
     delete( key ) {
-        localStorage.removeItem( this.prefix + key );  
+        localStorage.removeItem( this.name + key );  
         return Promise.resolve();
     }
 
@@ -48,11 +48,11 @@ export default class LocalStorage extends Storage {
 
     keys() {
         const keys = [];
-        const prefix = this.prefix;
-        const l = this.prefix.length;
+        const name = this.name;
+        const l = this.name.length;
 
         for( let key in localStorage ) {
-            if( key.indexOf( prefix ) ) continue;
+            if( key.indexOf( name ) ) continue;
             keys.push( key.substr( l ) );
         }
 

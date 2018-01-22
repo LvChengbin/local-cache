@@ -20,9 +20,8 @@ describe( 'Storage', () => {
                 ctime : +new Date,
                 md5 : '328dsjfashfsjafokjf',
                 lifetime : 2000,
-                ckmd5 : 'dsjkfajlkfjdaskfjaslfs',
-                priority : 6,
-                validate : [ 'lifetime' ]
+                cookie : 'dsjkfajlkfjdaskfjaslfs',
+                priority : 6
             };
             it( 'set', async done => {
                 const storage = new Storage();

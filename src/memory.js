@@ -43,7 +43,4 @@ export default class Memory extends Storage {
         this.data = {};
         return Promise.resolve();
     }
-
-    clean() {
-    }
 }

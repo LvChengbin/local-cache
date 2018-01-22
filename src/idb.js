@@ -51,7 +51,6 @@ export default class IDB extends Storage {
         os.createIndex( 'lifetime', 'lifetime', { unique : false } );
         os.createIndex( 'cookie', 'cookie', { unique : false } );
         os.createIndex( 'priority', 'priority', { unique : false } );
-        os.createIndex( 'expire', 'expire', { unique : false } );
     }
 
     store( write = false ) {
@@ -62,9 +61,9 @@ export default class IDB extends Storage {
 
         return this.ready.then( () => {
             return new Promise( ( resolve, reject ) => {
-                const objectStore = this.store( true );
+                const store = this.store( true );
                 // don't manipulate the origin data
-                const request = objectStore.put( Object.assign( { key }, data ) );
+                const request = store.put( Object.assign( { key }, data ) );
 
                 request.onsuccess = () => {
                     resolve( data );
@@ -80,8 +79,8 @@ export default class IDB extends Storage {
     delete( key ) {
         return this.ready.then( () => {
             return new Promise( ( resolve, reject ) => {
-                const objectStore = this.store( true );
-                const request = objectStore.delete( key );
+                const store = this.store( true );
+                const request = store.delete( key );
 
                 request.onsuccess = () => {
                     resolve();
@@ -97,8 +96,8 @@ export default class IDB extends Storage {
     get( key, options = {} ) {
         return this.ready.then( () => {
             return new Promise( ( resolve, reject ) => {
-                const objectStore = this.store();
-                const request = objectStore.get( key );
+                const store = this.store();
+                const request = store.get( key );
 
                 request.onsuccess = () => {
                     const data = request.result;
@@ -108,7 +107,7 @@ export default class IDB extends Storage {
 
                     if( this.validate( data, options ) === false ) {
                         this.delete( key ); 
-                        return Promise.reject();
+                        return reject();
                     }
                     delete data.key;
                     resolve( data );
@@ -125,8 +124,8 @@ export default class IDB extends Storage {
     clear() {
         return this.ready.then( () => {
             return new Promise( ( resolve, reject ) => {
-                const objectStore = this.store( true );
-                const request = objectStore.clear();
+                const store = this.store( true );
+                const request = store.clear();
 
                 request.onsuccess = () => {
                     resolve();
@@ -142,21 +141,39 @@ export default class IDB extends Storage {
     keys() {
         return this.ready.then( () => {
             return new Promise( ( resolve, reject ) => {
-                const objectStore = this.store();
-                const request = objectStore.getAllKeys();
+                const store = this.store();
 
-                request.onsuccess = () => {
-                    resolve( request.result );
-                };
+                if( store.getAllKeys ) {
+                    const request = store.getAllKeys();
 
-                request.onerror = () => {
-                    reject();
-                };
+                    request.onsuccess = () => {
+                        resolve( request.result );
+                    };
+
+                    request.onerror = () => {
+                        reject();
+                    };
+                } else {
+                    try {
+                        const request = store.openCursor();
+                        const keys = [];
+
+                        request.onsuccess = () => {
+                            const cursor = request.result;
+
+                            if( !cursor ) {
+                                resolve( keys );
+                                return;
+                            }
+
+                            keys.push( cursor.key );
+                            cursor.continue();
+                        };
+                    } catch( e ) {
+                        reject( e );
+                    }
+                }
             } );
         } );
     }
-
-    clean() {
-    }
-
 }

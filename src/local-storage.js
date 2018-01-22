@@ -58,7 +58,4 @@ export default class LocalStorage extends Storage {
 
         return Promise.resolve( keys );
     }
-
-    clean() {
-    }
 }

@@ -1,10 +1,11 @@
+import Sequence from '@lvchengbin/sequence';
 import is from '@lvchengbin/is';
 
 import md5 from './md5';
 
 export default class Storage {
     constructor() {
-        const abstracts = [ 'set', 'get', 'delete', 'clear', 'keys', 'clean' ];
+        const abstracts = [ 'set', 'get', 'delete', 'clear', 'keys' ];
 
         for( let method of abstracts ) {
 
@@ -34,5 +35,28 @@ export default class Storage {
         }
 
         return true;
+    }
+
+    clean() {
+        return this.keys().then( keys => {
+            const steps = []
+
+            for( let key of keys ) {
+                steps.push( () => this.get( key ) );
+            }
+
+            return Sequence.chain( steps ).then( results => {
+                const removed = [];
+
+                for( let result of results ) {
+
+                    if( result.status === Sequence.FAILED ) {
+                        removed.push( keys[ result.index ] );
+                    }
+                }
+
+                return removed;
+            } );
+        } );
     }
 }

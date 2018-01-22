@@ -58,7 +58,4 @@ export default class SessionStorage extends Storage {
 
         return Promise.resolve( keys );
     }
-
-    clean() {
-    }
 }

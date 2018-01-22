@@ -12,8 +12,17 @@ export default class Memory extends Storage {
         return Promise.resolve( data );
     }
 
-    get( key ) {
+    get( key, options = {} ) {
         if( !this.data.hasOwnProperty( key ) ) {
+            return Promise.reject();
+        }
+
+        const data = this.data[ key ];
+
+        if( !data ) return Promise.reject();
+
+        if( this.valdate( data, options ) === false ) {
+            this.data( key );
             return Promise.reject();
         }
 
@@ -33,5 +42,8 @@ export default class Memory extends Storage {
     clear() {
         this.data = {};
         return Promise.resolve();
+    }
+
+    clean() {
     }
 }

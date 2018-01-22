@@ -30,6 +30,7 @@
     "optimist": "^0.6.1",
     "pre-commit": "^1.2.2",
     "puppeteer": "^0.13.0",
+    "randomstring": "^1.1.5",
     "rollup": "^0.53.3",
     "rollup-plugin-babel": "^3.0.3",
     "rollup-plugin-node-resolve": "^3.0.2"
@@ -37,6 +38,9 @@
   "scripts": {
     "build": "rollup -c",
     "test": "karma start",
+    "test-md5": "karma start --file=test/md5.spec.js",
+    "test-storage": "karma start --file=test/storage.spec.js",
+    "test-local-cache": "karma start --file=test/local-cache.spec.js",
     "prepublish": "npm run build",
     "lint": "eslint ./ --cache --ignore-path .eslintignore",
     "precommit-msg": "echo 'Pre-commit checks...' && exit 0"
@@ -51,6 +55,7 @@
   "license": "MIT",
   "dependencies": {
     "@lvchengbin/is": "0.0.1",
-    "@lvchengbin/promise": "^1.0.10"
+    "@lvchengbin/promise": "^1.0.10",
+    "@lvchengbin/sequence": "0.0.3"
   }
 }

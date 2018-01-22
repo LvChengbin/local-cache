@@ -4,7 +4,7 @@ import Storage from './storage';
 export default class SessionStorage extends Storage {
     constructor( options  = {} ) {
         super();
-        this.prefix = options.prefix || '#LC-SESSION-STORAGE-V-1.0#';
+        this.prefix = options.prefix || '#LC-STORAGE-V-1.0#';
     }
 
     set( key, data ) {
@@ -16,11 +16,18 @@ export default class SessionStorage extends Storage {
         }
     }
 
-    get( key ) {
+    get( key, options = {} ) {
         let data;
         
         try {
             data = JSON.parse( sessionStorage.getItem( this.prefix + key ) );
+
+            if( !data ) return Promise.reject();
+
+            if( this.validate( data, options ) === false ) {
+                this.delete( key );
+                return Promise.reject();
+            }
         } catch( e ) {
             this.delete( key );
             return Promise.reject( null );
@@ -50,5 +57,8 @@ export default class SessionStorage extends Storage {
         }
 
         return Promise.resolve( keys );
+    }
+
+    clean() {
     }
 }

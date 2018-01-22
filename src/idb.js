@@ -4,7 +4,7 @@ export default class IDB extends Storage {
     constructor( database, version = 1 ) {
         super();
         if( !database ) {
-            database = 'LC-INDEXEDDB-V-1.0';
+            database = 'LC-STORAGE-V-1.0';
         }
 
         this.idb = null;
@@ -49,10 +49,9 @@ export default class IDB extends Storage {
         os.createIndex( 'ctime', 'ctime', { unique : false } );
         os.createIndex( 'md5', 'md5', { unique : false } );
         os.createIndex( 'lifetime', 'lifetime', { unique : false } );
-        os.createIndex( 'ckmd5', 'ckmd5', { unique : false } );
+        os.createIndex( 'cookie', 'cookie', { unique : false } );
         os.createIndex( 'priority', 'priority', { unique : false } );
-        os.createIndex( 'validate', 'validate', { unique : false } );
-        os.createIndex( 'ex', 'time', { unique : false } );
+        os.createIndex( 'expire', 'expire', { unique : false } );
     }
 
     store( write = false ) {
@@ -95,7 +94,7 @@ export default class IDB extends Storage {
         } );
     }
 
-    get( key ) {
+    get( key, options = {} ) {
         return this.ready.then( () => {
             return new Promise( ( resolve, reject ) => {
                 const objectStore = this.store();
@@ -105,6 +104,11 @@ export default class IDB extends Storage {
                     const data = request.result;
                     if( !data ) {
                         return reject();
+                    }
+
+                    if( this.validate( data, options ) === false ) {
+                        this.delete( key ); 
+                        return Promise.reject();
                     }
                     delete data.key;
                     resolve( data );
@@ -150,6 +154,9 @@ export default class IDB extends Storage {
                 };
             } );
         } );
+    }
+
+    clean() {
     }
 
 }

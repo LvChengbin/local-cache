@@ -4,7 +4,7 @@ import IDB from './IDB';
 let Persistent = Storage;
 
 if( window.indexedDB ) {
-    Persistent = IndexedDB;
+    Persistent = IDB;
 }
 
 export default Persistent;

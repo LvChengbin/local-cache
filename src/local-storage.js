@@ -4,7 +4,7 @@ import Storage from './storage';
 export default class LocalStorage extends Storage {
     constructor( options = {} ) {
         super();
-        this.prefix = options.prefix || '#LC-LOCAL-STORAGE-V-1.0#';
+        this.prefix = options.prefix || '#LC-STORAGE-V-1.0#';
     }
 
     set( key, data ) {
@@ -16,17 +16,24 @@ export default class LocalStorage extends Storage {
         }
     }
 
-    get( key ) {
+    get( key, options = {} ) {
         let data;
         
         try {
             data = JSON.parse( localStorage.getItem( this.prefix + key ) );
+
+            if( !data ) return Promise.reject();
+
+            if( this.validate( data, options ) === false ) {
+                this.delete( key );
+                return Promise.reject();
+            }
         } catch( e ) {
             this.delete( key );
-            return Promise.reject( null );
+            return Promise.reject();
         }
 
-        return data === null ? Promise.reject() : Promise.resolve( data );
+        return Promise.resolve( data );
     }
 
     delete( key ) {
@@ -50,5 +57,8 @@ export default class LocalStorage extends Storage {
         }
 
         return Promise.resolve( keys );
+    }
+
+    clean() {
     }
 }

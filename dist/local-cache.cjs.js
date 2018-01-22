@@ -856,6 +856,7 @@ class Storage {
 
     validate( data, options = {} ) {
         if( data.lifetime ) {
+            console.log( +new Date, data.ctime, data.lifetime, new Date - data.ctime );
             if( new Date - data.ctime >= data.lifetime ) {
                 return false;
             }
@@ -916,7 +917,6 @@ class Memory extends Storage {
     }
 
     get( key, options = {} ) {
-        console.log( 'xxxxxxxxxxxxx', key, options );
         const data = this.data[ key ];
 
         if( !data ) return Promise$1.reject();
@@ -1240,8 +1240,6 @@ class LocalCache {
             }
             steps.push( () => this[ mode ].get( key, options ) );
         }
-
-        console.log( steps );
 
         return Sequence.any( steps ).then( results => {
             return results[ results.length - 1 ].value;

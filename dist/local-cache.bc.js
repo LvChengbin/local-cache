@@ -1162,6 +1162,7 @@ var Storage = function () {
             var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
             if (data.lifetime) {
+                console.log(+new Date(), data.ctime, data.lifetime, new Date() - data.ctime);
                 if (new Date() - data.ctime >= data.lifetime) {
                     return false;
                 }
@@ -1288,7 +1289,6 @@ var Memory = function (_Storage) {
         value: function get$$1(key) {
             var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
-            console.log('xxxxxxxxxxxxx', key, options);
             var data = this.data[key];
 
             if (!data) return Promise$1.reject();
@@ -1729,8 +1729,6 @@ var LocalCache = function () {
                     }
                 }
             }
-
-            console.log(steps);
 
             return Sequence.any(steps).then(function (results) {
                 return results[results.length - 1].value;

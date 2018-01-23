@@ -1,10 +1,16 @@
 import Sequence from '@lvchengbin/sequence';
 import LocalCache from '../src/index';
 
+const supportedModes = [
+    'page',
+    'session',
+    'persistent'
+];
+
 describe( 'LocalCache', () => {
     const lc = new LocalCache( 'test' )
 
-    it( 'set in page', async done => {
+    it( 'set in page', done => {
 
         Sequence.all( [
             () => {
@@ -25,7 +31,7 @@ describe( 'LocalCache', () => {
         } );
     } );
 
-    it( 'data can be update', async done => {
+    it( 'data can be update', done => {
 
         Sequence.all( [
             () => {
@@ -46,7 +52,7 @@ describe( 'LocalCache', () => {
         } );
     } );
 
-    it( 'delete part of the data', async done => {
+    it( 'delete part of the data', done => {
 
         Sequence.chain( [
             () => {
@@ -70,7 +76,7 @@ describe( 'LocalCache', () => {
         } );
     } );
 
-    it( 'to clear all the data', async done => {
+    it( 'to clear all the data', done => {
 
         Sequence.chain( [
             () => {
@@ -94,7 +100,7 @@ describe( 'LocalCache', () => {
         } );
     } );
 
-    it( 'set data with valid conditions', async done => {
+    it( 'set data with validation conditions', done => {
         Sequence.chain( [
             () => {
                 return lc.set( 'key', 'update', {
@@ -134,4 +140,84 @@ describe( 'LocalCache', () => {
 
     } );
 
+    for( let mode of supportedModes ) {
+
+        it( 'get data with a validation conditions', done => {
+            Sequence.chain( [
+                () => lc.set( 'key1', 'value', { page : true, session : true, persistent : true } ),
+                () => lc.get( 'key1', [ mode ], {
+                    validate( data ) {
+                        if( data.data == 'value' ) {
+                            return false;
+                        }
+                    }
+                } ),
+                result => {
+                    expect( result.status ).toEqual( Sequence.FAILED );
+                    done();
+                }
+            ] );
+        } );
+
+        it( 'set autodelete to false', done => {
+            Sequence.chain( [
+                () => lc.set( 'key1', 'value', { page : true, session : true, persistent : true } ),
+                () => lc.get( 'key1', [ mode ], {
+                    autodelete : false,
+                    validate( data ) {
+                        if( data.data == 'value' ) {
+                            return false;
+                        }
+                    }
+                } ),
+                () => lc.get( 'key1', [ mode ] ),
+                result => {
+                    expect( result.value.data ).toEqual( 'value' );
+                    done();
+                }
+            ] );
+        } );
+    }
+
+    it( 'clean data wouldn\'t clean unmatched data', done => {
+        Sequence.chain( [
+            () => lc.set( 'key1', 'value', { page : true, session : true, persistent : true } ),
+            () => lc.clean(),
+            () => lc.get( 'key1', [ 'page', 'session', 'persistent' ] ),
+            result => {
+                expect( result.value.data ).toEqual( 'value' );
+                done();
+            }
+        ] );
+    } );
+
+    it( 'clean data', done => {
+        Sequence.chain( [
+            () => lc.set( 'key2', 'value', { page : true, session : true, persistent : true } ),
+            () => lc.clean( {
+                ctime : [ 0, +new Date ]
+            } ),
+            () => lc.get( 'key2', [ 'page', 'session', 'persistent' ] ),
+            result => {
+                expect( result.status ).toEqual( Sequence.FAILED );
+                done();
+            }
+        ] );
+    } );
+
+    it( 'clean data with remove function', done => {
+        Sequence.chain( [
+            () => lc.set( 'key3', 'value', { page : true, session : true, persistent : true } ),
+            () => lc.clean( {
+                remove( data, key ) {
+                    return key === 'key3'
+                }
+            } ),
+            () => lc.get( 'key3', [ 'page', 'session', 'persistent' ] ),
+            result => {
+                expect( result.status ).toEqual( Sequence.FAILED );
+                done();
+            }
+        ] );
+    } );
 } );

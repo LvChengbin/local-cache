@@ -105,7 +105,7 @@ export default class IDB extends Storage {
                     }
 
                     if( this.validate( data, options ) === false ) {
-                        this.delete( key ); 
+                        options.autodelete !== false && this.delete( key ); 
                         return reject();
                     }
                     delete data.key;

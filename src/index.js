@@ -1,5 +1,8 @@
 import Sequence from '@lvchengbin/sequence';
 import isObject from '@lvchengbin/is/src/object';
+import isUndefined from '@lvchengbin/is/src/undefined';
+import isNumber from '@lvchengbin/is/src/number';
+import isFunction from '@lvchengbin/is/src/function';
 import Memory from './memory';
 import SessionStorage from './session-storage';
 import Persistent from './persistent';
@@ -72,7 +75,6 @@ class LocalCache {
             }
             steps.push( () => this[ mode ].delete( key ) );
         }
-
         return Sequence.all( steps );
     }
 
@@ -91,14 +93,68 @@ class LocalCache {
         return Sequence.all( steps );
     }
 
-    clean() {
+    clean( options = {} ) {
+        const check = ( data, key ) => {
+            let remove = false;
+
+            const {
+                priority,
+                length,
+                ctime,
+                type
+            } = options;
+
+            if( !isUndefined( priority ) ) {
+                if( data.priority < priority ) {
+                    remove = true;
+                }
+            }
+
+            if( !remove && !isUndefined( length ) ) {
+                const content = data.data;
+                if( isNumber( length ) ) {
+                    if( content.length >= length ) {
+                        remove = true;
+                    }
+                } else if( Array.isArray( length ) ) {
+                    if( content.length >= length[ 0 ] && content.length <= length[ 1 ] ) {
+                        remove = true;
+                    }
+                }
+            }
+
+            if( !remove && Array.isArray( ctime ) ) {
+                if( data.ctime > ctime[ 0 ] && data.ctime < ctime[ 1 ] ) {
+                    remove = true;
+                }
+            }
+
+            if( !remove ) {
+                if( Array.isArray( type ) ) {
+                    if( type.indexOf( data.type ) > -1 ) {
+                        remove = true;
+                    }
+                } else if( type == data.type ) {
+                    remove = true;
+                }
+            }
+
+            if( !remove && isFunction( options.remove ) ) {
+                if( options.remove( data, key ) === true ) {
+                    remove = true;
+                }
+            }
+
+            return remove;
+        };
+
         const steps = [];
+
         for( let mode of supportedModes ) {
-            steps.push( () => this[ mode ].clean() );
+            steps.push( this[ mode ].clean( check ) );
         }
         return Promise.all( steps );
     }
-
 }
 
 export default LocalCache;

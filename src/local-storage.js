@@ -25,7 +25,7 @@ export default class LocalStorage extends Storage {
             if( !data ) return Promise.reject();
 
             if( this.validate( data, options ) === false ) {
-                this.delete( key );
+                options.autodelete !== false && this.delete( key );
                 return Promise.reject();
             }
         } catch( e ) {

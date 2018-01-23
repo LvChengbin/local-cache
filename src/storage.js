@@ -26,7 +26,8 @@ export default class Storage {
             data,
             priority : options.priority === undefined ? 50 : options.priority,
             ctime : +new Date,
-            lifetime : options.lifetime || 0
+            lifetime : options.lifetime || 0,
+            type : options.type || 'localdata'
         };
 
         if( options.md5 ) {
@@ -41,36 +42,44 @@ export default class Storage {
     }
 
     validate( data, options = {} ) {
+        let result = true;
+
         if( data.lifetime ) {
             if( new Date - data.ctime >= data.lifetime ) {
-                return false;
+                result = false;
             }
-        }
-
-        if( data.cookie ) {
+        } else if( data.cookie ) {
             if( data.cookie !== md5( document.cookie ) ) {
-                return false;
+                result = false;
             }
-        }
-
-        if( data.md5 && options.md5 ) {
+        } else if( data.md5 && options.md5 ) {
             if( data.md5 !== options.md5 ) {
-                return false;
+                result = false;
             }
             if( md5( data.data ) !== options.md5 ) {
-                return false;
+                result = false;
             }
         }
 
-        return true;
+        if( options.validate ) {
+            return options.validate( data, result );
+        }
+
+        return result;
     }
 
-    clean() {
+    clean( check ) {
         return this.keys().then( keys => {
             const steps = []
 
             for( let key of keys ) {
-                steps.push( () => this.get( key ) );
+                steps.push( () => {
+                    return this.get( key ).then( data => {
+                        if( check( data, key ) === true ) {
+                            return this.delete( key );
+                        }
+                    } )
+                } );
             }
 
             return Sequence.chain( steps ).then( results => {

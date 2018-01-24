@@ -1,5 +1,6 @@
 import Sequence from '@lvchengbin/sequence';
-import is from '@lvchengbin/is';
+import isString from '@lvchengbin/is/src/string';
+import isFunction from '@lvchengbin/is/src/function';
 
 import md5 from './md5';
 
@@ -15,23 +16,34 @@ export default class Storage {
 
         for( let method of abstracts ) {
 
-            if( !is.function( this[ method ] ) ) {
+            if( !isFunction( this[ method ] ) ) {
                 throw new TypeError( `The method "${method}" must be declared in every class extends from Cache` );
             }
         }
     }
 
     format( data, options = {} ) {
+        let string = true;
+        if( !isString( data ) ) {
+            string = false;
+            data = JSON.stringify( data );
+        }
+
         const input = {
             data,
+            type : options.type || 'localcache',
+            string,
             priority : options.priority === undefined ? 50 : options.priority,
             ctime : +new Date,
-            lifetime : options.lifetime || 0,
-            type : options.type || 'localdata'
+            lifetime : options.lifetime || 0
         };
 
+        if( options.extra ) {
+            input.extra = JSON.stringify( options.extra );
+        }
+
         if( options.md5 ) {
-            input.md5 = md5( JSON.stringify( data ) )
+            input.md5 = md5( data );
         }
 
         if( options.cookie ) {
@@ -95,5 +107,18 @@ export default class Storage {
                 return removed;
             } );
         } );
+    }
+
+    output( data ) {
+
+        if( !data.string ) {
+            data.data = JSON.parse( data.data );
+        }
+
+        if( data.extra ) {
+            data.extra = JSON.parse( data.extra );
+        }
+
+        return data;
     }
 }

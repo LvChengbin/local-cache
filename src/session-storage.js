@@ -30,10 +30,9 @@ export default class SessionStorage extends Storage {
             }
         } catch( e ) {
             this.delete( key );
-            return Promise.reject( null );
+            return Promise.reject();
         }
-
-        return data === null ? Promise.reject() : Promise.resolve( data );
+        return Promise.resolve( this.output( data ) );
     }
 
     delete( key ) {

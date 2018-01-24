@@ -43,11 +43,14 @@ export default class IDB extends Storage {
 
         os.createIndex( 'key', 'key', { unique : true } );
         os.createIndex( 'data', 'data', { unique : false } );
+        os.createIndex( 'type', 'type', { unique : false } );
+        os.createIndex( 'string', 'string', { unique : false } );
         os.createIndex( 'ctime', 'ctime', { unique : false } );
         os.createIndex( 'md5', 'md5', { unique : false } );
         os.createIndex( 'lifetime', 'lifetime', { unique : false } );
         os.createIndex( 'cookie', 'cookie', { unique : false } );
         os.createIndex( 'priority', 'priority', { unique : false } );
+        os.createIndex( 'extra', 'extra', { unique : false } );
     }
 
     store( write = false ) {
@@ -109,7 +112,7 @@ export default class IDB extends Storage {
                         return reject();
                     }
                     delete data.key;
-                    resolve( data );
+                    resolve( this.output( data ) );
                 };
 
                 request.onerror = e => {

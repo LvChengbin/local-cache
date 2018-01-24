@@ -23,7 +23,7 @@ export default class Memory extends Storage {
             return Promise.reject();
         }
 
-        return Promise.resolve( data );
+        return Promise.resolve( this.output( data ) );
     }
 
     delete( key ) {

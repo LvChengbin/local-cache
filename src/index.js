@@ -3,6 +3,7 @@ import isObject from '@lvchengbin/is/src/object';
 import isUndefined from '@lvchengbin/is/src/undefined';
 import isNumber from '@lvchengbin/is/src/number';
 import isFunction from '@lvchengbin/is/src/function';
+import isDate from '@lvchengbin/is/src/date';
 import Memory from './memory';
 import SessionStorage from './session-storage';
 import Persistent from './persistent';
@@ -18,9 +19,15 @@ const supportedModes = [
 
 class LocalCache {
     constructor( name ) {
+        if( !name ) {
+            throw new TypeError( 'Expect a name for your storage' );
+        }
+
         this.page = new Memory( name );
         this.session = new SessionStorage( name );
         this.persistent = new Persistent( name );
+
+        this.clean();
     }
     set( key, data, options ) {
 
@@ -41,7 +48,7 @@ class LocalCache {
         }
 
         if( !steps.length ) {
-            throw new TypeError( `You must specify at least one mode in [${supportedModes.join(', ')}]` );
+            throw new TypeError( `You must specify at least one storage mode in [${supportedModes.join(', ')}]` );
         }
 
         return Sequence.all( steps ).then( () => data );
@@ -54,7 +61,7 @@ class LocalCache {
 
         for( let mode of modes ) {
             if( !this[ mode ] ) {
-                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
+                throw new TypeError( `Unexcepted storage mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
             }
             steps.push( () => this[ mode ].get( key, options ) );
         }
@@ -97,12 +104,7 @@ class LocalCache {
         const check = ( data, key ) => {
             let remove = false;
 
-            const {
-                priority,
-                length,
-                ctime,
-                type
-            } = options;
+            const { priority, length, ctime, type } = options;
 
             if( !isUndefined( priority ) ) {
                 if( data.priority < priority ) {
@@ -123,9 +125,15 @@ class LocalCache {
                 }
             }
 
-            if( !remove && Array.isArray( ctime ) ) {
-                if( data.ctime > ctime[ 0 ] && data.ctime < ctime[ 1 ] ) {
-                    remove = true;
+            if( !remove && !isUndefined( ctime ) ) {
+                if( isDate( ctime ) || isNumber( ctime ) ) {
+                    if( data.ctime < +ctime ) {
+                        remove = true;
+                    }
+                } else if( Array.isArray( ctime ) ) {
+                    if( data.ctime > ctime[ 0 ] && data.ctime < ctime[ 1 ] ) {
+                        remove = true;
+                    }
                 }
             }
 

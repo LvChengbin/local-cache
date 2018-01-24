@@ -245,4 +245,32 @@ describe( 'LocalCache', () => {
         ] );
     } );
 
+    it( 'clean data with ctime condition', done => {
+        Sequence.chain( [
+            () => lc.set( 'key4', 'value', { page : true, session : true, persistent : true } ),
+            () => lc.clean( {
+                ctime : [ 0, new Date ]
+            } ),
+            () => lc.get( 'key4', [ 'page', 'session', 'persistent' ] ),
+            result => {
+                expect( result.status ).toEqual( Sequence.FAILED );
+                done();
+            }
+        ] );
+    } );
+
+    it( 'clean data with type condition', done => {
+        Sequence.chain( [
+            () => lc.set( 'key5', 'value', { page : true, session : true, persistent : true, type : 'tttype' } ),
+            () => lc.clean( {
+                type : [ 'tttype' ]
+            } ),
+            () => lc.get( 'key5', [ 'page', 'session', 'persistent' ] ),
+            result => {
+                expect( result.status ).toEqual( Sequence.FAILED );
+                done();
+            }
+        ] );
+    } );
+
 } );

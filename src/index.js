@@ -43,6 +43,14 @@ class LocalCache {
             if( !isObject( opts ) ) {
                 opts = {};
             }
+
+            if( !isUndefined( options.type ) ) {
+                opts.type = options.type;
+            }
+
+            if( !isUndefined( options.extra ) ) {
+                opts.extra = options.extra;
+            }
             
             steps.push( () => this[ mode ].set( key, data, opts ) );
         }

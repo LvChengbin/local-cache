@@ -4,11 +4,11 @@
 	(global.LocalCache = factory());
 }(this, (function () { 'use strict';
 
-var asyncFunction = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
+var isAsyncFunction = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
 
-var isFunction = fn => ({}).toString.call( fn ) === '[object Function]' || asyncFunction( fn );
+var isFunction = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction( fn );
 
-var promise = p => p && isFunction( p.then );
+var isPromise = p => p && isFunction( p.then );
 
 const Promise$1 = class {
     constructor( fn ) {
@@ -33,15 +33,15 @@ const Promise$1 = class {
     }
 
     then( resolved, rejected ) {
-        const promise$$1 = new Promise$1( () => {} );
+        const promise = new Promise$1( () => {} );
         this[ '[[PromiseThenables]]' ].push( {
             resolve : isFunction( resolved ) ? resolved : null,
             reject : isFunction( rejected ) ? rejected : null,
             called : false,
-            promise: promise$$1
+            promise
         } );
         if( this[ '[[PromiseStatus]]' ] !== 'pending' ) promiseExecute( this );
-        return promise$$1;
+        return promise;
     }
 
     catch( reject ) {
@@ -77,7 +77,7 @@ Promise$1.all = function( promises ) {
     return new Promise$1( ( resolve, reject ) => {
         let remaining = 0;
         const then = ( p, i ) => {
-            if( !promise( p ) ) {
+            if( !isPromise( p ) ) {
                 p = Promise$1.resolve( p );
             }
             p.then( value => {
@@ -94,8 +94,8 @@ Promise$1.all = function( promises ) {
         };
 
         let i = 0;
-        for( let promise$$1 of promises ) {
-            then( promise$$1, remaining = i++ );
+        for( let promise of promises ) {
+            then( promise, remaining = i++ );
         }
     } );
 };
@@ -119,21 +119,21 @@ Promise$1.race = function( promises ) {
             }
         }
 
-        for( let promise$$1 of promises ) {
-            if( !promise( promise$$1 ) ) {
-                promise$$1 = Promise$1.resolve( promise$$1 );
+        for( let promise of promises ) {
+            if( !isPromise( promise ) ) {
+                promise = Promise$1.resolve( promise );
             }
-            promise$$1.then( onresolved, onrejected );
+            promise.then( onresolved, onrejected );
         }
     } );
 };
 
-function promiseExecute( promise$$1 ) {
+function promiseExecute( promise ) {
     var thenable,
         p;
 
-    if( promise$$1[ '[[PromiseStatus]]' ] === 'pending' ) return;
-    if( !promise$$1[ '[[PromiseThenables]]' ].length ) return;
+    if( promise[ '[[PromiseStatus]]' ] === 'pending' ) return;
+    if( !promise[ '[[PromiseThenables]]' ].length ) return;
 
     const then = ( p, t ) => {
         p.then( value => {
@@ -143,20 +143,20 @@ function promiseExecute( promise$$1 ) {
         } );
     };
 
-    while( promise$$1[ '[[PromiseThenables]]' ].length ) {
-        thenable = promise$$1[ '[[PromiseThenables]]' ].shift();
+    while( promise[ '[[PromiseThenables]]' ].length ) {
+        thenable = promise[ '[[PromiseThenables]]' ].shift();
 
         if( thenable.called ) continue;
 
         thenable.called = true;
 
-        if( promise$$1[ '[[PromiseStatus]]' ] === 'resolved' ) {
+        if( promise[ '[[PromiseStatus]]' ] === 'resolved' ) {
             if( !thenable.resolve ) {
-                promiseResolve( thenable.promise, promise$$1[ '[[PromiseValue]]' ] );
+                promiseResolve( thenable.promise, promise[ '[[PromiseValue]]' ] );
                 continue;
             }
             try {
-                p = thenable.resolve.call( null, promise$$1[ '[[PromiseValue]]' ] );
+                p = thenable.resolve.call( null, promise[ '[[PromiseValue]]' ] );
             } catch( e ) {
                 then( Promise$1.reject( e ), thenable );
                 continue;
@@ -167,11 +167,11 @@ function promiseExecute( promise$$1 ) {
             }
         } else {
             if( !thenable.reject ) {
-                promiseReject( thenable.promise, promise$$1[ '[[PromiseValue]]' ] ); 
+                promiseReject( thenable.promise, promise[ '[[PromiseValue]]' ] ); 
                 continue;
             }
             try {
-                p = thenable.reject.call( null, promise$$1[ '[[PromiseValue]]' ] );
+                p = thenable.reject.call( null, promise[ '[[PromiseValue]]' ] );
             } catch( e ) {
                 then( Promise$1.reject( e ), thenable );
                 continue;
@@ -183,17 +183,17 @@ function promiseExecute( promise$$1 ) {
         }
         promiseResolve( thenable.promise, p );
     }
-    return promise$$1;
+    return promise;
 }
 
-function promiseResolve( promise$$1, value ) {
-    if( !( promise$$1 instanceof Promise$1 ) ) {
+function promiseResolve( promise, value ) {
+    if( !( promise instanceof Promise$1 ) ) {
         return new Promise$1( resolve => {
             resolve( value );
         } );
     }
-    if( promise$$1[ '[[PromiseStatus]]' ] !== 'pending' ) return;
-    if( value === promise$$1 ) {
+    if( promise[ '[[PromiseStatus]]' ] !== 'pending' ) return;
+    if( value === promise ) {
         /**
          * thie error should be thrown, defined ES6 standard
          * it would be thrown in Chrome but not in Firefox or Safari
@@ -207,36 +207,36 @@ function promiseResolve( promise$$1, value ) {
         try {
             then = value.then;
         } catch( e ) {
-            return promiseReject( promise$$1, e );
+            return promiseReject( promise, e );
         }
 
         if( typeof then === 'function' ) {
             then.call( value, 
-                promiseResolve.bind( null, promise$$1 ),
-                promiseReject.bind( null, promise$$1 )
+                promiseResolve.bind( null, promise ),
+                promiseReject.bind( null, promise )
             );
             return;
         }
     }
-    promise$$1[ '[[PromiseStatus]]' ] = 'resolved';
-    promise$$1[ '[[PromiseValue]]' ] = value;
-    promiseExecute( promise$$1 );
+    promise[ '[[PromiseStatus]]' ] = 'resolved';
+    promise[ '[[PromiseValue]]' ] = value;
+    promiseExecute( promise );
 }
 
-function promiseReject( promise$$1, value ) {
-    if( !( promise$$1 instanceof Promise$1 ) ) {
+function promiseReject( promise, value ) {
+    if( !( promise instanceof Promise$1 ) ) {
         return new Promise$1( ( resolve, reject ) => {
             reject( value );
         } );
     }
-    promise$$1[ '[[PromiseStatus]]' ] = 'rejected';
-    promise$$1[ '[[PromiseValue]]' ] = value;
-    promiseExecute( promise$$1 );
+    promise[ '[[PromiseStatus]]' ] = 'rejected';
+    promise[ '[[PromiseValue]]' ] = value;
+    promiseExecute( promise );
 }
 
 var isString = str => typeof str === 'string' || str instanceof String;
 
-var regexp = reg => ({}).toString.call( reg ) === '[object RegExp]';
+var isRegExp = reg => ({}).toString.call( reg ) === '[object RegExp]';
 
 class EventEmitter {
     constructor() {
@@ -299,7 +299,7 @@ class EventEmitter {
             checker = name => rule === name;
         } else if( isFunction( rule ) ) {
             checker = rule;
-        } else if( regexp( rule ) ) {
+        } else if( isRegExp( rule ) ) {
             checker = name => {
                 rule.lastIndex = 0;
                 return rule.test( name );
@@ -316,11 +316,11 @@ class EventEmitter {
     }
 }
 
-var isAsyncFunction = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
+var isAsyncFunction$1 = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
 
-var isFunction$1 = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction( fn );
+var isFunction$1 = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction$1( fn );
 
-var isPromise = p => p && isFunction$1( p.then );
+var isPromise$1 = p => p && isFunction$1( p.then );
 
 function isUndefined() {
     return arguments.length > 0 && typeof arguments[ 0 ] === 'undefined';
@@ -427,7 +427,7 @@ class Sequence extends EventEmitter {
              * if the step function doesn't return a promise instance,
              * create a resolved promise instance with the returned value as its value
              */
-            if( !isPromise( promise ) ) {
+            if( !isPromise$1( promise ) ) {
                 promise = Promise$1.resolve( promise );
             }
             return promise.then( value => {
@@ -532,40 +532,9 @@ Sequence.Error = class {
 
 var isObject = obj => obj && typeof obj === 'object' && !Array.isArray( obj );
 
-var isArguments = obj => ({}).toString.call( obj ) === '[object Arguments]';
-
-var isArray = obj => Array.isArray( obj );
-
-var arrowFunction = fn => {
-    if( !isFunction( fn ) ) return false;
-    return /^(?:function)?\s*\(?[\w\s,]*\)?\s*=>/.test( fn.toString() );
-};
-
-var isBoolean = s => typeof s === 'boolean';
-
-var date = date => ({}).toString.call( date ) === '[object Date]';
-
-var email = str => /^(([^#$%&*!+-/=?^`{|}~<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/i.test( str );
-
-var empty = obj => {
-    if( isArray( obj ) || isString( obj ) ) {
-        return !obj.length;
-    }
-    if( isObject( obj ) ) {
-        return !Object.keys( obj ).length;
-    }
-    return !obj;
-};
-
-var error = e => ({}).toString.call( e ) === '[object Error]';
-
-var isFalse = ( obj, generalized = true ) => {
-    if( isBoolean( obj ) || !generalized ) return !obj;
-    if( isString( obj ) ) {
-        return [ 'false', 'no', '0', '', 'nay', 'n', 'disagree' ].indexOf( obj.toLowerCase() ) > -1;
-    }
-    return !obj;
-};
+function isUndefined$1() {
+    return arguments.length > 0 && typeof arguments[ 0 ] === 'undefined';
+}
 
 var isNumber = ( n, strict = false ) => {
     if( ({}).toString.call( n ).toLowerCase() === '[object number]' ) {
@@ -575,105 +544,7 @@ var isNumber = ( n, strict = false ) => {
     return !isNaN( parseFloat( n ) ) && isFinite( n )  && !/\.$/.test( n );
 };
 
-var integer = ( n, strict = false ) => {
-
-    if( isNumber( n, true ) ) return n % 1 === 0;
-
-    if( strict ) return false;
-
-    if( isString( n ) ) {
-        if( n === '-0' ) return true;
-        return n.indexOf( '.' ) < 0 && String( parseInt( n ) ) === n;
-    }
-
-    return false;
-}
-
-var iterable = obj => {
-    try {
-        return isFunction( obj[ Symbol.iterator ] );
-    } catch( e ) {
-        return false;
-    }
-};
-
-// https://github.com/jquery/jquery/blob/2d4f53416e5f74fa98e0c1d66b6f3c285a12f0ce/test/data/jquery-1.9.1.js#L480
-
-var plainObject = obj => {
-    if( !isObject( obj ) ) {
-        return false;
-    }
-
-    try {
-        if( obj.constructor && !({}).hasOwnProperty.call( obj, 'constructor' ) && !({}).hasOwnProperty.call( obj.constructor.prototype, 'isPrototypeOf' ) ) {
-            return false;
-        }
-    } catch( e ) {
-        return false;
-    }
-
-    let key;
-    for( key in obj ) {} // eslint-disable-line
-
-    return key === undefined || ({}).hasOwnProperty.call( obj, key );
-};
-
-var isTrue = ( obj, generalized = true ) => {
-    if( isBoolean( obj ) || !generalized ) return !!obj;
-    if( isString( obj ) ) {
-        return [ 'true', 'yes', 'ok', '1', 'yea', 'yep', 'y', 'agree' ].indexOf( obj.toLowerCase() ) > -1;
-    }
-    return !!obj;
-};
-
-function isUndefined$1() {
-    return arguments.length > 0 && typeof arguments[ 0 ] === 'undefined';
-}
-
-var url = url => {
-    if( !isString( url ) ) return false;
-    if( !/^(https?|ftp):\/\//i.test( url ) ) return false;
-    const a = document.createElement( 'a' );
-    a.href = url;
-    return /^(https?|ftp):/i.test( a.protocol );
-};
-
-var isNode = s => ( typeof Node === 'object' ? s instanceof Node : s && typeof s === 'object' && typeof s.nodeType === 'number' && typeof s.nodeName === 'string' )
-
-var textNode = node => isNode( node ) && node.nodeType === 3;
-
-var elementNode = node => isNode( node ) && node.nodeType === 1;
-
-var isWindow = obj => obj && obj === obj.window;
-
-var is = {
-    arguments : isArguments,
-    array: isArray,
-    arrowFunction,
-    asyncFunction,
-    boolean : isBoolean,
-    date,
-    email,
-    empty,
-    error,
-    false : isFalse,
-    function : isFunction,
-    integer,
-    iterable,
-    number: isNumber,
-    object: isObject,
-    plainObject,
-    promise,
-    regexp,
-    string: isString,
-    true : isTrue,
-    undefined : isUndefined$1,
-    url,
-    node: isNode,
-    textNode,
-    elementNode,
-    window : isWindow
-};
+var isDate = date => ({}).toString.call( date ) === '[object Date]';
 
 var md5 = ( () => {
     const safe_add = (x, y) => {
@@ -833,22 +704,34 @@ class Storage {
 
         for( let method of abstracts ) {
 
-            if( !is.function( this[ method ] ) ) {
+            if( !isFunction( this[ method ] ) ) {
                 throw new TypeError( `The method "${method}" must be declared in every class extends from Cache` );
             }
         }
     }
 
     format( data, options = {} ) {
+        let string = true;
+        if( !isString( data ) ) {
+            string = false;
+            data = JSON.stringify( data );
+        }
+
         const input = {
             data,
+            type : options.type || 'localcache',
+            string,
             priority : options.priority === undefined ? 50 : options.priority,
             ctime : +new Date,
             lifetime : options.lifetime || 0
         };
 
+        if( options.extra ) {
+            input.extra = JSON.stringify( options.extra );
+        }
+
         if( options.md5 ) {
-            input.md5 = md5( JSON.stringify( data ) );
+            input.md5 = md5( data );
         }
 
         if( options.cookie ) {
@@ -859,37 +742,48 @@ class Storage {
     }
 
     validate( data, options = {} ) {
-        if( data.lifetime ) {
-            console.log( +new Date, data.ctime, data.lifetime, new Date - data.ctime );
-            if( new Date - data.ctime >= data.lifetime ) {
-                return false;
-            }
-        }
+        let result = true;
 
+        if( data.lifetime ) {
+            if( new Date - data.ctime >= data.lifetime ) {
+                result = false;
+            }
+        } 
+        
         if( data.cookie ) {
             if( data.cookie !== md5( document.cookie ) ) {
-                return false;
+                result = false;
             }
-        }
-
+        } 
+        
         if( data.md5 && options.md5 ) {
             if( data.md5 !== options.md5 ) {
-                return false;
+                result = false;
             }
             if( md5( data.data ) !== options.md5 ) {
-                return false;
+                result = false;
             }
         }
 
-        return true;
+        if( options.validate ) {
+            return options.validate( data, result );
+        }
+
+        return result;
     }
 
-    clean() {
+    clean( check ) {
         return this.keys().then( keys => {
             const steps = [];
 
             for( let key of keys ) {
-                steps.push( () => this.get( key ) );
+                steps.push( () => {
+                    return this.get( key ).then( data => {
+                        if( check( data, key ) === true ) {
+                            return this.delete( key );
+                        }
+                    } )
+                } );
             }
 
             return Sequence.chain( steps ).then( results => {
@@ -905,6 +799,19 @@ class Storage {
                 return removed;
             } );
         } );
+    }
+
+    output( data ) {
+
+        if( !data.string ) {
+            data.data = JSON.parse( data.data );
+        }
+
+        if( data.extra ) {
+            data.extra = JSON.parse( data.extra );
+        }
+
+        return data;
     }
 }
 
@@ -925,12 +832,13 @@ class Memory extends Storage {
 
         if( !data ) return Promise$1.reject();
 
+
         if( this.validate( data, options ) === false ) {
-            this.delete( key );
+            options.autodelete !== false && this.delete( key );
             return Promise$1.reject();
         }
 
-        return Promise$1.resolve( data );
+        return Promise$1.resolve( this.output( data ) );
     }
 
     delete( key ) {
@@ -973,15 +881,14 @@ class SessionStorage extends Storage {
             if( !data ) return Promise$1.reject();
 
             if( this.validate( data, options ) === false ) {
-                this.delete( key );
+                options.autodelete !== false && this.delete( key );
                 return Promise$1.reject();
             }
         } catch( e ) {
             this.delete( key );
-            return Promise$1.reject( null );
+            return Promise$1.reject();
         }
-
-        return data === null ? Promise$1.reject() : Promise$1.resolve( data );
+        return Promise$1.resolve( this.output( data ) );
     }
 
     delete( key ) {
@@ -1051,11 +958,14 @@ class IDB extends Storage {
 
         os.createIndex( 'key', 'key', { unique : true } );
         os.createIndex( 'data', 'data', { unique : false } );
+        os.createIndex( 'type', 'type', { unique : false } );
+        os.createIndex( 'string', 'string', { unique : false } );
         os.createIndex( 'ctime', 'ctime', { unique : false } );
         os.createIndex( 'md5', 'md5', { unique : false } );
         os.createIndex( 'lifetime', 'lifetime', { unique : false } );
         os.createIndex( 'cookie', 'cookie', { unique : false } );
         os.createIndex( 'priority', 'priority', { unique : false } );
+        os.createIndex( 'extra', 'extra', { unique : false } );
     }
 
     store( write = false ) {
@@ -1113,11 +1023,11 @@ class IDB extends Storage {
                     }
 
                     if( this.validate( data, options ) === false ) {
-                        this.delete( key ); 
+                        options.autodelete !== false && this.delete( key ); 
                         return reject();
                     }
                     delete data.key;
-                    resolve( data );
+                    resolve( this.output( data ) );
                 };
 
                 request.onerror = e => {
@@ -1204,9 +1114,15 @@ const supportedModes = [
 
 class LocalCache {
     constructor( name ) {
+        if( !name ) {
+            throw new TypeError( 'Expect a name for your storage' );
+        }
+
         this.page = new Memory( name );
         this.session = new SessionStorage( name );
         this.persistent = new Persistent$1( name );
+
+        this.clean();
     }
     set( key, data, options ) {
 
@@ -1222,12 +1138,20 @@ class LocalCache {
             if( !isObject( opts ) ) {
                 opts = {};
             }
+
+            if( !isUndefined$1( options.type ) ) {
+                opts.type = options.type;
+            }
+
+            if( !isUndefined$1( options.extra ) ) {
+                opts.extra = options.extra;
+            }
             
             steps.push( () => this[ mode ].set( key, data, opts ) );
         }
 
         if( !steps.length ) {
-            throw new TypeError( `You must specify at least one mode in [${supportedModes.join(', ')}]` );
+            throw new TypeError( `You must specify at least one storage mode in [${supportedModes.join(', ')}]` );
         }
 
         return Sequence.all( steps ).then( () => data );
@@ -1240,7 +1164,7 @@ class LocalCache {
 
         for( let mode of modes ) {
             if( !this[ mode ] ) {
-                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
+                throw new TypeError( `Unexcepted storage mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
             }
             steps.push( () => this[ mode ].get( key, options ) );
         }
@@ -1261,7 +1185,6 @@ class LocalCache {
             }
             steps.push( () => this[ mode ].delete( key ) );
         }
-
         return Sequence.all( steps );
     }
 
@@ -1280,14 +1203,69 @@ class LocalCache {
         return Sequence.all( steps );
     }
 
-    clean() {
+    clean( options = {} ) {
+        const check = ( data, key ) => {
+            let remove = false;
+
+            const { priority, length, ctime, type } = options;
+
+            if( !isUndefined$1( priority ) ) {
+                if( data.priority < priority ) {
+                    remove = true;
+                }
+            }
+
+            if( !remove && !isUndefined$1( length ) ) {
+                const content = data.data;
+                if( isNumber( length ) ) {
+                    if( content.length >= length ) {
+                        remove = true;
+                    }
+                } else if( Array.isArray( length ) ) {
+                    if( content.length >= length[ 0 ] && content.length <= length[ 1 ] ) {
+                        remove = true;
+                    }
+                }
+            }
+
+            if( !remove && !isUndefined$1( ctime ) ) {
+                if( isDate( ctime ) || isNumber( ctime ) ) {
+                    if( data.ctime < +ctime ) {
+                        remove = true;
+                    }
+                } else if( Array.isArray( ctime ) ) {
+                    if( data.ctime > ctime[ 0 ] && data.ctime < ctime[ 1 ] ) {
+                        remove = true;
+                    }
+                }
+            }
+
+            if( !remove ) {
+                if( Array.isArray( type ) ) {
+                    if( type.indexOf( data.type ) > -1 ) {
+                        remove = true;
+                    }
+                } else if( type == data.type ) {
+                    remove = true;
+                }
+            }
+
+            if( !remove && isFunction( options.remove ) ) {
+                if( options.remove( data, key ) === true ) {
+                    remove = true;
+                }
+            }
+
+            return remove;
+        };
+
         const steps = [];
+
         for( let mode of supportedModes ) {
-            steps.push( () => this[ mode ].clean() );
+            steps.push( this[ mode ].clean( check ) );
         }
         return Promise.all( steps );
     }
-
 }
 
 return LocalCache;

@@ -31,6 +31,30 @@ describe( 'LocalCache', () => {
         } );
     } );
 
+    it( 'set extra data in page', done => {
+
+        Sequence.all( [
+            () => {
+                return lc.set( 'key2', 'data', {
+                    page : true,
+                    session : true,
+                    persistent : true,
+                    extra : {
+                        name : 'lx'
+                    }
+                } );
+            },
+            () => lc.get( 'key2', [ 'page' ] ),
+            () => lc.get( 'key2', [ 'session' ] ),
+            () => lc.get( 'key2', [ 'persistent' ] )
+        ] ).then( results => {
+            expect( results[ 1 ].value.extra ).toEqual( { name : 'lx' } );
+            expect( results[ 2 ].value.extra ).toEqual( { name : 'lx' } );
+            expect( results[ 3 ].value.extra ).toEqual( { name : 'lx' } );
+            done();
+        } );
+    } );
+
     it( 'data can be update', done => {
 
         Sequence.all( [
@@ -220,4 +244,5 @@ describe( 'LocalCache', () => {
             }
         ] );
     } );
+
 } );

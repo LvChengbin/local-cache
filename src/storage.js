@@ -60,11 +60,15 @@ export default class Storage {
             if( new Date - data.ctime >= data.lifetime ) {
                 result = false;
             }
-        } else if( data.cookie ) {
+        } 
+        
+        if( data.cookie ) {
             if( data.cookie !== md5( document.cookie ) ) {
                 result = false;
             }
-        } else if( data.md5 && options.md5 ) {
+        } 
+        
+        if( data.md5 && options.md5 ) {
             if( data.md5 !== options.md5 ) {
                 result = false;
             }

@@ -5,6 +5,12 @@ import LocalStorage from '../src/local-storage';
 import SessionStorage from '../src/session-storage';
 import IDB from '../src/idb';
 
+let id = 0;
+
+function sname() {
+    return 'test-' + +new Date + id++;
+}
+
 const storages = {
     Memory,
     LocalStorage,
@@ -21,8 +27,8 @@ describe( 'Storage', () => {
                 lifetime : 2000,
                 priority : 6
             };
-            it( 'set', done => {
-                const storage = new Storage( 'test-1' );
+            it( 'storing a string', done => {
+                const storage = new Storage( sname() );
                 Sequence.all( [
                     () => {
                         return storage.set( 'key', 'data', options ).catch( e => {
@@ -40,8 +46,27 @@ describe( 'Storage', () => {
                 } );
             } );
 
+            it( 'storing a object', done => {
+                const storage = new Storage( sname() );
+                Sequence.all( [
+                    () => {
+                        return storage.set( 'key', { name : 'lx' }, options ).catch( e => {
+                            console.log( 'Set error: ', e );
+                        } );
+                    },
+                    () => {
+                        return storage.get( 'key' ).then( data => {
+                            expect( data.data ).toEqual( { name : 'lx' } );
+                            done();
+                        } ).catch( e => {
+                            console.log( 'Get error: ', e );
+                        } );
+                    }
+                ] );
+            } );
+
             it( 'delete', done => {
-                const storage = new Storage( 'test-2' );
+                const storage = new Storage( sname() );
 
                 Sequence.all( [
                     () => {
@@ -63,7 +88,7 @@ describe( 'Storage', () => {
             } );
 
             it( 'keys', done => {
-                const storage = new Storage( 'test-3' );
+                const storage = new Storage( sname() );
                 Sequence.all( [
                     () => storage.set( 'key1', 'value' ),
                     () => storage.set( 'key2', 'value' ),
@@ -77,7 +102,7 @@ describe( 'Storage', () => {
             } );
 
             it( 'clear', done => {
-                const storage = new Storage( 'test-4' );
+                const storage = new Storage( sname() );
                 Sequence.all( [
                     () => storage.set( 'key1', 'data', options ),
                     () => storage.set( 'key2', 'data', options ),
@@ -104,7 +129,7 @@ describe( 'Storage', () => {
                 priority : 6
             };
 
-            const storage = new Storage( 'test-5' );
+            const storage = new Storage( sname() );
 
             Sequence.all( [
                 () => {
@@ -127,10 +152,9 @@ describe( 'Storage', () => {
                 cookie : true
             };
 
-            const storage = new Storage( 'test-6' );
+            const storage = new Storage( sname() );
 
             Sequence.all( [
-
                 () => {
                     return storage.set( 'key', 'data', options ).catch( e => {
                         console.log( 'Set error: ', e );
@@ -138,14 +162,43 @@ describe( 'Storage', () => {
                 },
                 () => {
                     document.cookie = 'x=' + +new Date;
-                    return storage.get( 'key' ).catch( () => {
+                    return storage.get( 'key' ).then( data => {
+                        console.log( 'got data: ', data );
+                    } ).catch( () => {
                         done();
                     } );
                 }
             ] );
         } );
 
-        it( 'validating md5', done => {
+        it( 'validating with correct md5 value', done => {
+            const options = {
+                lifetime : 50,
+                priority : 6,
+                cookie : true,
+                md5 : true
+            };
+
+            const storage = new Storage( sname() );
+
+            Sequence.chain( [
+                () => {
+                    return storage.set( 'key', 'value', options ).catch( e => {
+                        console.log( 'Set error: ', e );
+                    } );
+                },
+                () => {
+                    return storage.get( 'key', { md5 : '2063c1608d6e0baf80249c42e2be5804' } ).then( value => {
+                        expect( value.data ).toEqual( 'value' )
+                        done();
+                    } ).catch( () => {
+                        console.log( 'Should not get data' );
+                    } );
+                }
+            ] );
+        } );
+
+        it( 'invalid md5 value', done => {
 
             const options = {
                 lifetime : 50,
@@ -154,16 +207,35 @@ describe( 'Storage', () => {
                 md5 : true
             };
 
-            const storage = new Storage( 'test-7' );
+            const storage = new Storage( sname() );
 
             Sequence.all( [
                 () => {
-                    return storage.set( 'key2', 'data', options ).catch( e => {
+                    return storage.set( 'key', 'data', options ).catch( e => {
                         console.log( 'Set error: ', e );
                     } );
                 },
                 () => {
                     return storage.get( 'key', { md5 : 'xxxx' } ).catch( () => {
+                        done();
+                    } );
+                }
+            ] );
+        } );
+
+        it( 'validate with custom function', done => {
+            const storage = new Storage( sname() );
+
+            Sequence.all( [
+                () => {
+                    return storage.set( 'key', 'data' ).catch( e => {
+                        console.log( 'Set error: ', e );
+                    } );
+                },
+                () => {
+                    return storage.get( 'key', { 
+                        validate : () => false
+                    } ).catch( () => {
                         done();
                     } );
                 }

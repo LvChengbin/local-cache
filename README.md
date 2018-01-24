@@ -8,13 +8,13 @@
     * [Storage modes](#storage-modes)
     * [Data storing in LocalCache](#data-storing-in-localcache)
     * [Validating data](#validating-data)
-    * [API](#api)
-        * [LocalCache( name )](#localcache-name-)
-        * [set( key, data, options )](#set-key-data-options-)
-        * [get( key, modes, options )](#get-key-modes-options-)
-        * [delete( key, modes )](#delete-key-modes-)
-        * [clear( modes )](#clear-modes-)
-        * [clean( options )](#clean-options-)
+* [API](#api)
+    * [LocalCache( name )](#localcache-name-)
+    * [set( key, data, options )](#set-key-data-options-)
+    * [get( key, modes, options )](#get-key-modes-options-)
+    * [delete( key, modes )](#delete-key-modes-)
+    * [clear( modes )](#clear-modes-)
+    * [clean( options )](#clean-options-)
 
 <!-- vim-markdown-toc -->
 
@@ -243,9 +243,9 @@ So `lifetime`, `md5` and `cookie` are the three ways for checking data, they can
     } );
     ```
 
-### API
+## API
 
-#### LocalCache( name )
+### LocalCache( name )
 
 To create a new `LocalCache` instance with "name". The name should be a string and will be used as a part of each key in `localStorage` and `sessionStorage` or a part of database name in `indexedDB`.
 
@@ -253,7 +253,7 @@ To create a new `LocalCache` instance with "name". The name should be a string a
 new LocalCache( 'a-name-that-you-like' );
 ```
 
-#### set( key, data, options )
+### set( key, data, options )
 
 To set data into `LocalCache`. In `options`, you can specify the [Storage modes](#storage-modes) you want to use with [Storage options](#storage-options).
 
@@ -291,7 +291,7 @@ localcache.set( 'key2', { name : 'lx', age : 20 }, {
 
  - **key**
 
-#### get( key, modes, options )
+### get( key, modes, options )
 
 To get available data from `LocalCache`. You can specify multiple storage modes, and data will be sought in the storage modes you specified one by one until got the available data.
 
@@ -320,7 +320,7 @@ localcache.get( 'key', [ 'page', 'persistent' ] ).then( data => {
 
 - An rejected `Promise` if couldn't found available data from specified storages.
 
-#### delete( key, modes )
+### delete( key, modes )
 
 To delete data with its "key" in specified storage modes.
 
@@ -331,7 +331,7 @@ localcache.delete( 'key', [ 'page', 'session' ] );
 
 **Return value**: a `Promise`.
 
-#### clear( modes )
+### clear( modes )
 
 To remove all data in one or multiple storages. If the argument is empty, all data in all storages mode will be removed.
 
@@ -342,7 +342,7 @@ const localcache = new LocalCache( 'local-cache' );
 localcache.clear( [ 'page', 'session', 'persistent' ] );
 ```
 
-#### clean( options )
+### clean( options )
 
 To clean unavailable data storing in `LocalCache`. By calling this function, `LocalCache` will ask every storage to check all the data.
 
@@ -432,4 +432,3 @@ By default, only data cannot pass the `lifetime` and `cookie` check will be dele
         }
     } );
     ```
-

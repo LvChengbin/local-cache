@@ -4,15 +4,15 @@
 	(global.LocalCache = factory());
 }(this, (function () { 'use strict';
 
-var asyncFunction = (function (fn) {
+var isAsyncFunction = (function (fn) {
   return {}.toString.call(fn) === '[object AsyncFunction]';
 });
 
 var isFunction = (function (fn) {
-  return {}.toString.call(fn) === '[object Function]' || asyncFunction(fn);
+  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction(fn);
 });
 
-var promise = (function (p) {
+var isPromise = (function (p) {
   return p && isFunction(p.then);
 });
 
@@ -125,15 +125,15 @@ var Promise$1 = function () {
     createClass(Promise, [{
         key: 'then',
         value: function then(resolved, rejected) {
-            var promise$$1 = new Promise(function () {});
+            var promise = new Promise(function () {});
             this['[[PromiseThenables]]'].push({
                 resolve: isFunction(resolved) ? resolved : null,
                 reject: isFunction(rejected) ? rejected : null,
                 called: false,
-                promise: promise$$1
+                promise: promise
             });
             if (this['[[PromiseStatus]]'] !== 'pending') promiseExecute(this);
-            return promise$$1;
+            return promise;
         }
     }, {
         key: 'catch',
@@ -172,7 +172,7 @@ Promise$1.all = function (promises) {
     return new Promise$1(function (resolve, reject) {
         var remaining = 0;
         var then = function then(p, i) {
-            if (!promise(p)) {
+            if (!isPromise(p)) {
                 p = Promise$1.resolve(p);
             }
             p.then(function (value) {
@@ -195,9 +195,9 @@ Promise$1.all = function (promises) {
 
         try {
             for (var _iterator = promises[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                var promise$$1 = _step.value;
+                var promise = _step.value;
 
-                then(promise$$1, remaining = i++);
+                then(promise, remaining = i++);
             }
         } catch (err) {
             _didIteratorError = true;
@@ -241,12 +241,12 @@ Promise$1.race = function (promises) {
 
         try {
             for (var _iterator2 = promises[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                var promise$$1 = _step2.value;
+                var promise = _step2.value;
 
-                if (!promise(promise$$1)) {
-                    promise$$1 = Promise$1.resolve(promise$$1);
+                if (!isPromise(promise)) {
+                    promise = Promise$1.resolve(promise);
                 }
-                promise$$1.then(onresolved, onrejected);
+                promise.then(onresolved, onrejected);
             }
         } catch (err) {
             _didIteratorError2 = true;
@@ -265,11 +265,11 @@ Promise$1.race = function (promises) {
     });
 };
 
-function promiseExecute(promise$$1) {
+function promiseExecute(promise) {
     var thenable, p;
 
-    if (promise$$1['[[PromiseStatus]]'] === 'pending') return;
-    if (!promise$$1['[[PromiseThenables]]'].length) return;
+    if (promise['[[PromiseStatus]]'] === 'pending') return;
+    if (!promise['[[PromiseThenables]]'].length) return;
 
     var then = function then(p, t) {
         p.then(function (value) {
@@ -279,20 +279,20 @@ function promiseExecute(promise$$1) {
         });
     };
 
-    while (promise$$1['[[PromiseThenables]]'].length) {
-        thenable = promise$$1['[[PromiseThenables]]'].shift();
+    while (promise['[[PromiseThenables]]'].length) {
+        thenable = promise['[[PromiseThenables]]'].shift();
 
         if (thenable.called) continue;
 
         thenable.called = true;
 
-        if (promise$$1['[[PromiseStatus]]'] === 'resolved') {
+        if (promise['[[PromiseStatus]]'] === 'resolved') {
             if (!thenable.resolve) {
-                promiseResolve(thenable.promise, promise$$1['[[PromiseValue]]']);
+                promiseResolve(thenable.promise, promise['[[PromiseValue]]']);
                 continue;
             }
             try {
-                p = thenable.resolve.call(null, promise$$1['[[PromiseValue]]']);
+                p = thenable.resolve.call(null, promise['[[PromiseValue]]']);
             } catch (e) {
                 then(Promise$1.reject(e), thenable);
                 continue;
@@ -303,11 +303,11 @@ function promiseExecute(promise$$1) {
             }
         } else {
             if (!thenable.reject) {
-                promiseReject(thenable.promise, promise$$1['[[PromiseValue]]']);
+                promiseReject(thenable.promise, promise['[[PromiseValue]]']);
                 continue;
             }
             try {
-                p = thenable.reject.call(null, promise$$1['[[PromiseValue]]']);
+                p = thenable.reject.call(null, promise['[[PromiseValue]]']);
             } catch (e) {
                 then(Promise$1.reject(e), thenable);
                 continue;
@@ -319,17 +319,17 @@ function promiseExecute(promise$$1) {
         }
         promiseResolve(thenable.promise, p);
     }
-    return promise$$1;
+    return promise;
 }
 
-function promiseResolve(promise$$1, value) {
-    if (!(promise$$1 instanceof Promise$1)) {
+function promiseResolve(promise, value) {
+    if (!(promise instanceof Promise$1)) {
         return new Promise$1(function (resolve) {
             resolve(value);
         });
     }
-    if (promise$$1['[[PromiseStatus]]'] !== 'pending') return;
-    if (value === promise$$1) {
+    if (promise['[[PromiseStatus]]'] !== 'pending') return;
+    if (value === promise) {
         /**
          * thie error should be thrown, defined ES6 standard
          * it would be thrown in Chrome but not in Firefox or Safari
@@ -343,35 +343,35 @@ function promiseResolve(promise$$1, value) {
         try {
             then = value.then;
         } catch (e) {
-            return promiseReject(promise$$1, e);
+            return promiseReject(promise, e);
         }
 
         if (typeof then === 'function') {
-            then.call(value, promiseResolve.bind(null, promise$$1), promiseReject.bind(null, promise$$1));
+            then.call(value, promiseResolve.bind(null, promise), promiseReject.bind(null, promise));
             return;
         }
     }
-    promise$$1['[[PromiseStatus]]'] = 'resolved';
-    promise$$1['[[PromiseValue]]'] = value;
-    promiseExecute(promise$$1);
+    promise['[[PromiseStatus]]'] = 'resolved';
+    promise['[[PromiseValue]]'] = value;
+    promiseExecute(promise);
 }
 
-function promiseReject(promise$$1, value) {
-    if (!(promise$$1 instanceof Promise$1)) {
+function promiseReject(promise, value) {
+    if (!(promise instanceof Promise$1)) {
         return new Promise$1(function (resolve, reject) {
             reject(value);
         });
     }
-    promise$$1['[[PromiseStatus]]'] = 'rejected';
-    promise$$1['[[PromiseValue]]'] = value;
-    promiseExecute(promise$$1);
+    promise['[[PromiseStatus]]'] = 'rejected';
+    promise['[[PromiseValue]]'] = value;
+    promiseExecute(promise);
 }
 
 var isString = (function (str) {
   return typeof str === 'string' || str instanceof String;
 });
 
-var regexp = (function (reg) {
+var isRegExp = (function (reg) {
   return {}.toString.call(reg) === '[object RegExp]';
 });
 
@@ -459,7 +459,7 @@ var EventEmitter = function () {
                 };
             } else if (isFunction(rule)) {
                 checker = rule;
-            } else if (regexp(rule)) {
+            } else if (isRegExp(rule)) {
                 checker = function checker(name) {
                     rule.lastIndex = 0;
                     return rule.test(name);
@@ -478,15 +478,15 @@ var EventEmitter = function () {
     return EventEmitter;
 }();
 
-var isAsyncFunction = (function (fn) {
+var isAsyncFunction$1 = (function (fn) {
   return {}.toString.call(fn) === '[object AsyncFunction]';
 });
 
 var isFunction$1 = (function (fn) {
-  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction(fn);
+  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction$1(fn);
 });
 
-var isPromise = (function (p) {
+var isPromise$1 = (function (p) {
   return p && isFunction$1(p.then);
 });
 
@@ -629,7 +629,7 @@ var Sequence = function (_EventEmitter) {
                  * if the step function doesn't return a promise instance,
                  * create a resolved promise instance with the returned value as its value
                  */
-                if (!isPromise(promise)) {
+                if (!isPromise$1(promise)) {
                     promise = Promise$1.resolve(promise);
                 }
                 return promise.then(function (value) {
@@ -755,56 +755,9 @@ var isObject = (function (obj) {
   return obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object' && !Array.isArray(obj);
 });
 
-var isArguments = (function (obj) {
-  return {}.toString.call(obj) === '[object Arguments]';
-});
-
-var isArray = (function (obj) {
-  return Array.isArray(obj);
-});
-
-var arrowFunction = (function (fn) {
-    if (!isFunction(fn)) return false;
-    return (/^(?:function)?\s*\(?[\w\s,]*\)?\s*=>/.test(fn.toString())
-    );
-});
-
-var isBoolean = (function (s) {
-  return typeof s === 'boolean';
-});
-
-var date = (function (date) {
-  return {}.toString.call(date) === '[object Date]';
-});
-
-var email = (function (str) {
-  return (/^(([^#$%&*!+-/=?^`{|}~<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/i.test(str)
-  );
-});
-
-var empty = (function (obj) {
-    if (isArray(obj) || isString(obj)) {
-        return !obj.length;
-    }
-    if (isObject(obj)) {
-        return !Object.keys(obj).length;
-    }
-    return !obj;
-});
-
-var error = (function (e) {
-  return {}.toString.call(e) === '[object Error]';
-});
-
-var isFalse = (function (obj) {
-    var generalized = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-    if (isBoolean(obj) || !generalized) return !obj;
-    if (isString(obj)) {
-        return ['false', 'no', '0', '', 'nay', 'n', 'disagree'].indexOf(obj.toLowerCase()) > -1;
-    }
-    return !obj;
-});
+function isUndefined$1 () {
+    return arguments.length > 0 && typeof arguments[0] === 'undefined';
+}
 
 var isNumber = (function (n) {
     var strict = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
@@ -816,118 +769,9 @@ var isNumber = (function (n) {
     return !isNaN(parseFloat(n)) && isFinite(n) && !/\.$/.test(n);
 });
 
-var integer = (function (n) {
-    var strict = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-
-    if (isNumber(n, true)) return n % 1 === 0;
-
-    if (strict) return false;
-
-    if (isString(n)) {
-        if (n === '-0') return true;
-        return n.indexOf('.') < 0 && String(parseInt(n)) === n;
-    }
-
-    return false;
+var isDate = (function (date) {
+  return {}.toString.call(date) === '[object Date]';
 });
-
-var iterable = (function (obj) {
-    try {
-        return isFunction(obj[Symbol.iterator]);
-    } catch (e) {
-        return false;
-    }
-});
-
-// https://github.com/jquery/jquery/blob/2d4f53416e5f74fa98e0c1d66b6f3c285a12f0ce/test/data/jquery-1.9.1.js#L480
-
-var plainObject = (function (obj) {
-    if (!isObject(obj)) {
-        return false;
-    }
-
-    try {
-        if (obj.constructor && !{}.hasOwnProperty.call(obj, 'constructor') && !{}.hasOwnProperty.call(obj.constructor.prototype, 'isPrototypeOf')) {
-            return false;
-        }
-    } catch (e) {
-        return false;
-    }
-
-    var key = void 0;
-    for (key in obj) {} // eslint-disable-line
-
-    return key === undefined || {}.hasOwnProperty.call(obj, key);
-});
-
-var isTrue = (function (obj) {
-    var generalized = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-    if (isBoolean(obj) || !generalized) return !!obj;
-    if (isString(obj)) {
-        return ['true', 'yes', 'ok', '1', 'yea', 'yep', 'y', 'agree'].indexOf(obj.toLowerCase()) > -1;
-    }
-    return !!obj;
-});
-
-function isUndefined$1 () {
-    return arguments.length > 0 && typeof arguments[0] === 'undefined';
-}
-
-var url = (function (url) {
-    if (!isString(url)) return false;
-    if (!/^(https?|ftp):\/\//i.test(url)) return false;
-    var a = document.createElement('a');
-    a.href = url;
-    return (/^(https?|ftp):/i.test(a.protocol)
-    );
-});
-
-var isNode = (function (s) {
-  return (typeof Node === 'undefined' ? 'undefined' : _typeof(Node)) === 'object' ? s instanceof Node : s && (typeof s === 'undefined' ? 'undefined' : _typeof(s)) === 'object' && typeof s.nodeType === 'number' && typeof s.nodeName === 'string';
-});
-
-var textNode = (function (node) {
-  return isNode(node) && node.nodeType === 3;
-});
-
-var elementNode = (function (node) {
-  return isNode(node) && node.nodeType === 1;
-});
-
-var isWindow = (function (obj) {
-  return obj && obj === obj.window;
-});
-
-var is = {
-    arguments: isArguments,
-    array: isArray,
-    arrowFunction: arrowFunction,
-    asyncFunction: asyncFunction,
-    boolean: isBoolean,
-    date: date,
-    email: email,
-    empty: empty,
-    error: error,
-    false: isFalse,
-    function: isFunction,
-    integer: integer,
-    iterable: iterable,
-    number: isNumber,
-    object: isObject,
-    plainObject: plainObject,
-    promise: promise,
-    regexp: regexp,
-    string: isString,
-    true: isTrue,
-    undefined: isUndefined$1,
-    url: url,
-    node: isNode,
-    textNode: textNode,
-    elementNode: elementNode,
-    window: isWindow
-};
 
 var md5 = (function () {
     var safe_add = function safe_add(x, y) {
@@ -1114,7 +958,7 @@ var Storage = function () {
                 var method = _step.value;
 
 
-                if (!is.function(this[method])) {
+                if (!isFunction(this[method])) {
                     throw new TypeError('The method "' + method + '" must be declared in every class extends from Cache');
                 }
             }
@@ -1139,15 +983,27 @@ var Storage = function () {
         value: function format(data) {
             var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
+            var string = true;
+            if (!isString(data)) {
+                string = false;
+                data = JSON.stringify(data);
+            }
+
             var input = {
                 data: data,
+                type: options.type || 'localcache',
+                string: string,
                 priority: options.priority === undefined ? 50 : options.priority,
                 ctime: +new Date(),
                 lifetime: options.lifetime || 0
             };
 
+            if (options.extra) {
+                input.extra = JSON.stringify(options.extra);
+            }
+
             if (options.md5) {
-                input.md5 = md5(JSON.stringify(data));
+                input.md5 = md5(data);
             }
 
             if (options.cookie) {
@@ -1161,33 +1017,38 @@ var Storage = function () {
         value: function validate(data) {
             var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
+            var result = true;
+
             if (data.lifetime) {
-                console.log(+new Date(), data.ctime, data.lifetime, new Date() - data.ctime);
                 if (new Date() - data.ctime >= data.lifetime) {
-                    return false;
+                    result = false;
                 }
             }
 
             if (data.cookie) {
                 if (data.cookie !== md5(document.cookie)) {
-                    return false;
+                    result = false;
                 }
             }
 
             if (data.md5 && options.md5) {
                 if (data.md5 !== options.md5) {
-                    return false;
+                    result = false;
                 }
                 if (md5(data.data) !== options.md5) {
-                    return false;
+                    result = false;
                 }
             }
 
-            return true;
+            if (options.validate) {
+                return options.validate(data, result);
+            }
+
+            return result;
         }
     }, {
         key: 'clean',
-        value: function clean() {
+        value: function clean(check) {
             var _this = this;
 
             return this.keys().then(function (keys) {
@@ -1202,7 +1063,11 @@ var Storage = function () {
                         var key = _step2.value;
 
                         steps.push(function () {
-                            return _this.get(key);
+                            return _this.get(key).then(function (data) {
+                                if (check(data, key) === true) {
+                                    return _this.delete(key);
+                                }
+                            });
                         });
                     };
 
@@ -1259,6 +1124,20 @@ var Storage = function () {
                 });
             });
         }
+    }, {
+        key: 'output',
+        value: function output(data) {
+
+            if (!data.string) {
+                data.data = JSON.parse(data.data);
+            }
+
+            if (data.extra) {
+                data.extra = JSON.parse(data.extra);
+            }
+
+            return data;
+        }
     }]);
     return Storage;
 }();
@@ -1294,11 +1173,11 @@ var Memory = function (_Storage) {
             if (!data) return Promise$1.reject();
 
             if (this.validate(data, options) === false) {
-                this.delete(key);
+                options.autodelete !== false && this.delete(key);
                 return Promise$1.reject();
             }
 
-            return Promise$1.resolve(data);
+            return Promise$1.resolve(this.output(data));
         }
     }, {
         key: 'delete',
@@ -1356,15 +1235,14 @@ var SessionStorage = function (_Storage) {
                 if (!data) return Promise$1.reject();
 
                 if (this.validate(data, options) === false) {
-                    this.delete(key);
+                    options.autodelete !== false && this.delete(key);
                     return Promise$1.reject();
                 }
             } catch (e) {
                 this.delete(key);
-                return Promise$1.reject(null);
+                return Promise$1.reject();
             }
-
-            return data === null ? Promise$1.reject() : Promise$1.resolve(data);
+            return Promise$1.resolve(this.output(data));
         }
     }, {
         key: 'delete',
@@ -1448,11 +1326,14 @@ var IDB = function (_Storage) {
 
             os.createIndex('key', 'key', { unique: true });
             os.createIndex('data', 'data', { unique: false });
+            os.createIndex('type', 'type', { unique: false });
+            os.createIndex('string', 'string', { unique: false });
             os.createIndex('ctime', 'ctime', { unique: false });
             os.createIndex('md5', 'md5', { unique: false });
             os.createIndex('lifetime', 'lifetime', { unique: false });
             os.createIndex('cookie', 'cookie', { unique: false });
             os.createIndex('priority', 'priority', { unique: false });
+            os.createIndex('extra', 'extra', { unique: false });
         }
     }, {
         key: 'store',
@@ -1526,11 +1407,11 @@ var IDB = function (_Storage) {
                         }
 
                         if (_this5.validate(data, options) === false) {
-                            _this5.delete(key);
+                            options.autodelete !== false && _this5.delete(key);
                             return reject();
                         }
                         delete data.key;
-                        resolve(data);
+                        resolve(_this5.output(data));
                     };
 
                     request.onerror = function (e) {
@@ -1622,9 +1503,15 @@ var LocalCache = function () {
     function LocalCache(name) {
         classCallCheck(this, LocalCache);
 
+        if (!name) {
+            throw new TypeError('Expect a name for your storage');
+        }
+
         this.page = new Memory(name);
         this.session = new SessionStorage(name);
         this.persistent = new Persistent$1(name);
+
+        this.clean();
     }
 
     createClass(LocalCache, [{
@@ -1650,6 +1537,14 @@ var LocalCache = function () {
 
                     if (!isObject(opts)) {
                         opts = {};
+                    }
+
+                    if (!isUndefined$1(options.type)) {
+                        opts.type = options.type;
+                    }
+
+                    if (!isUndefined$1(options.extra)) {
+                        opts.extra = options.extra;
                     }
 
                     steps.push(function () {
@@ -1678,7 +1573,7 @@ var LocalCache = function () {
             }
 
             if (!steps.length) {
-                throw new TypeError('You must specify at least one mode in [' + supportedModes.join(', ') + ']');
+                throw new TypeError('You must specify at least one storage mode in [' + supportedModes.join(', ') + ']');
             }
 
             return Sequence.all(steps).then(function () {
@@ -1705,7 +1600,7 @@ var LocalCache = function () {
                     var mode = _step2.value;
 
                     if (!_this2[mode]) {
-                        throw new TypeError('Unexcepted mode "' + mode + '", excepted one of: ' + supportedModes.join(', '));
+                        throw new TypeError('Unexcepted storage mode "' + mode + '", excepted one of: ' + supportedModes.join(', '));
                     }
                     steps.push(function () {
                         return _this2[mode].get(key, options);
@@ -1827,24 +1722,78 @@ var LocalCache = function () {
     }, {
         key: 'clean',
         value: function clean() {
-            var _this5 = this;
+            var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+            var check = function check(data, key) {
+                var remove = false;
+
+                var priority = options.priority,
+                    length = options.length,
+                    ctime = options.ctime,
+                    type = options.type;
+
+
+                if (!isUndefined$1(priority)) {
+                    if (data.priority < priority) {
+                        remove = true;
+                    }
+                }
+
+                if (!remove && !isUndefined$1(length)) {
+                    var content = data.data;
+                    if (isNumber(length)) {
+                        if (content.length >= length) {
+                            remove = true;
+                        }
+                    } else if (Array.isArray(length)) {
+                        if (content.length >= length[0] && content.length <= length[1]) {
+                            remove = true;
+                        }
+                    }
+                }
+
+                if (!remove && !isUndefined$1(ctime)) {
+                    if (isDate(ctime) || isNumber(ctime)) {
+                        if (data.ctime < +ctime) {
+                            remove = true;
+                        }
+                    } else if (Array.isArray(ctime)) {
+                        if (data.ctime > ctime[0] && data.ctime < ctime[1]) {
+                            remove = true;
+                        }
+                    }
+                }
+
+                if (!remove) {
+                    if (Array.isArray(type)) {
+                        if (type.indexOf(data.type) > -1) {
+                            remove = true;
+                        }
+                    } else if (type == data.type) {
+                        remove = true;
+                    }
+                }
+
+                if (!remove && isFunction(options.remove)) {
+                    if (options.remove(data, key) === true) {
+                        remove = true;
+                    }
+                }
+
+                return remove;
+            };
 
             var steps = [];
+
             var _iteratorNormalCompletion5 = true;
             var _didIteratorError5 = false;
             var _iteratorError5 = undefined;
 
             try {
-                var _loop5 = function _loop5() {
-                    var mode = _step5.value;
-
-                    steps.push(function () {
-                        return _this5[mode].clean();
-                    });
-                };
-
                 for (var _iterator5 = supportedModes[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                    _loop5();
+                    var _mode = _step5.value;
+
+                    steps.push(this[_mode].clean(check));
                 }
             } catch (err) {
                 _didIteratorError5 = true;

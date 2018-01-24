@@ -36,7 +36,7 @@ As well, you can use it as a ES6 module:
 ```js
 import LocalCache from '@lvchengbin/localcache';
 ```
-We also provide files for using in browsers directly with `<script>` tag, you can get it here [localcache.js](https://raw.githubusercontent.com/LvChengbin/localcache/master/dist/local-cache.js), and if you want to use it in browsers not supporting ES5 syntax, please use [localcache.bc.js](https://raw.githubusercontent.com/LvChengbin/localcache/master/dist/local-cache.bc.js).
+We also provide files for using in browsers directly with `<script>` tag, you can get it here [localcache.js](https://raw.githubusercontent.com/LvChengbin/localcache/master/dist/localcache.js), and if you want to use it in browsers not supporting ES5 syntax, please use [localcache.bc.js](https://raw.githubusercontent.com/LvChengbin/localcache/master/dist/localcache.bc.js).
 
 ## Usage
 

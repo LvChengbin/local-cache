@@ -236,6 +236,10 @@ function promiseReject( promise, value ) {
 
 var isString = str => typeof str === 'string' || str instanceof String;
 
+var isAsyncFunction$1 = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
+
+var isFunction$1 = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction$1( fn );
+
 var isRegExp = reg => ({}).toString.call( reg ) === '[object RegExp]';
 
 class EventEmitter {
@@ -297,7 +301,7 @@ class EventEmitter {
         let checker;
         if( isString( rule ) ) {
             checker = name => rule === name;
-        } else if( isFunction( rule ) ) {
+        } else if( isFunction$1( rule ) ) {
             checker = rule;
         } else if( isRegExp( rule ) ) {
             checker = name => {
@@ -316,11 +320,11 @@ class EventEmitter {
     }
 }
 
-var isAsyncFunction$1 = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
+var isAsyncFunction$2 = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
 
-var isFunction$1 = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction$1( fn );
+var isFunction$2 = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction$2( fn );
 
-var isPromise$1 = p => p && isFunction$1( p.then );
+var isPromise$1 = p => p && isFunction$2( p.then );
 
 function isUndefined() {
     return arguments.length > 0 && typeof arguments[ 0 ] === 'undefined';
@@ -366,7 +370,7 @@ class Sequence extends EventEmitter {
     append( steps ) {
         const dead = this.index >= this.steps.length;
 
-        if( isFunction$1( steps ) ) {
+        if( isFunction$2( steps ) ) {
             this.steps.push( steps );
         } else {
             for( let step of steps ) {
@@ -544,7 +548,13 @@ var isNumber = ( n, strict = false ) => {
     return !isNaN( parseFloat( n ) ) && isFinite( n )  && !/\.$/.test( n );
 };
 
+var isAsyncFunction$3 = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
+
+var isFunction$3 = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction$3( fn );
+
 var isDate = date => ({}).toString.call( date ) === '[object Date]';
+
+var isString$1 = str => typeof str === 'string' || str instanceof String;
 
 var md5 = ( () => {
     const safe_add = (x, y) => {
@@ -704,7 +714,7 @@ class Storage {
 
         for( let method of abstracts ) {
 
-            if( !isFunction( this[ method ] ) ) {
+            if( !isFunction$3( this[ method ] ) ) {
                 throw new TypeError( `The method "${method}" must be declared in every class extends from Cache` );
             }
         }
@@ -712,7 +722,7 @@ class Storage {
 
     format( data, options = {} ) {
         let string = true;
-        if( !isString( data ) ) {
+        if( !isString$1( data ) ) {
             string = false;
             data = JSON.stringify( data );
         }
@@ -1250,7 +1260,7 @@ class LocalCache {
                 }
             }
 
-            if( !remove && isFunction( options.remove ) ) {
+            if( !remove && isFunction$3( options.remove ) ) {
                 if( options.remove( data, key ) === true ) {
                     remove = true;
                 }

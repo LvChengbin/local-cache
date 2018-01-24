@@ -371,6 +371,14 @@ var isString = (function (str) {
   return typeof str === 'string' || str instanceof String;
 });
 
+var isAsyncFunction$1 = (function (fn) {
+  return {}.toString.call(fn) === '[object AsyncFunction]';
+});
+
+var isFunction$1 = (function (fn) {
+  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction$1(fn);
+});
+
 var isRegExp = (function (reg) {
   return {}.toString.call(reg) === '[object RegExp]';
 });
@@ -457,7 +465,7 @@ var EventEmitter = function () {
                 checker = function checker(name) {
                     return rule === name;
                 };
-            } else if (isFunction(rule)) {
+            } else if (isFunction$1(rule)) {
                 checker = rule;
             } else if (isRegExp(rule)) {
                 checker = function checker(name) {
@@ -478,16 +486,16 @@ var EventEmitter = function () {
     return EventEmitter;
 }();
 
-var isAsyncFunction$1 = (function (fn) {
+var isAsyncFunction$2 = (function (fn) {
   return {}.toString.call(fn) === '[object AsyncFunction]';
 });
 
-var isFunction$1 = (function (fn) {
-  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction$1(fn);
+var isFunction$2 = (function (fn) {
+  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction$2(fn);
 });
 
 var isPromise$1 = (function (p) {
-  return p && isFunction$1(p.then);
+  return p && isFunction$2(p.then);
 });
 
 function isUndefined () {
@@ -544,7 +552,7 @@ var Sequence = function (_EventEmitter) {
         value: function append(steps) {
             var dead = this.index >= this.steps.length;
 
-            if (isFunction$1(steps)) {
+            if (isFunction$2(steps)) {
                 this.steps.push(steps);
             } else {
                 var _iteratorNormalCompletion = true;
@@ -769,8 +777,20 @@ var isNumber = (function (n) {
     return !isNaN(parseFloat(n)) && isFinite(n) && !/\.$/.test(n);
 });
 
+var isAsyncFunction$3 = (function (fn) {
+  return {}.toString.call(fn) === '[object AsyncFunction]';
+});
+
+var isFunction$3 = (function (fn) {
+  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction$3(fn);
+});
+
 var isDate = (function (date) {
   return {}.toString.call(date) === '[object Date]';
+});
+
+var isString$1 = (function (str) {
+  return typeof str === 'string' || str instanceof String;
 });
 
 var md5 = (function () {
@@ -958,7 +978,7 @@ var Storage = function () {
                 var method = _step.value;
 
 
-                if (!isFunction(this[method])) {
+                if (!isFunction$3(this[method])) {
                     throw new TypeError('The method "' + method + '" must be declared in every class extends from Cache');
                 }
             }
@@ -984,7 +1004,7 @@ var Storage = function () {
             var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
             var string = true;
-            if (!isString(data)) {
+            if (!isString$1(data)) {
                 string = false;
                 data = JSON.stringify(data);
             }
@@ -1774,7 +1794,7 @@ var LocalCache = function () {
                     }
                 }
 
-                if (!remove && isFunction(options.remove)) {
+                if (!remove && isFunction$3(options.remove)) {
                     if (options.remove(data, key) === true) {
                         remove = true;
                     }

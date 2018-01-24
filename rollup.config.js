@@ -10,8 +10,8 @@ export default [ {
         } )
     ],
     output : [
-        { file : 'dist/local-cache.cjs.js', format : 'cjs' },
-        { file : 'dist/local-cache.js', format : 'umd', name : 'LocalCache' }
+        { file : 'dist/localcache.cjs.js', format : 'cjs' },
+        { file : 'dist/localcache.js', format : 'umd', name : 'LocalCache' }
     ]
 }, {
     input : 'src/index.js',
@@ -23,6 +23,6 @@ export default [ {
         babel()
     ],
     output : [
-        { file : 'dist/local-cache.bc.js', format : 'umd', name : 'LocalCache' }
+        { file : 'dist/localcache.bc.js', format : 'umd', name : 'LocalCache' }
     ]
 } ];

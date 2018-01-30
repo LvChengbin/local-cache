@@ -11,12 +11,6 @@ import Persistent from './persistent';
 /**
  * please don't change the order of items in this array.
  */
-const supportedModes = [
-    'page',
-    'session',
-    'persistent'
-];
-
 class LocalCache {
     constructor( name ) {
         if( !name ) {
@@ -33,7 +27,7 @@ class LocalCache {
 
         const steps = [];
 
-        for( let mode of supportedModes ) {
+        for( let mode of LocalCache.STORAGES ) {
             if( !options[ mode ] ) continue;
 
             let opts = options[ mode ];
@@ -56,20 +50,20 @@ class LocalCache {
         }
 
         if( !steps.length ) {
-            throw new TypeError( `You must specify at least one storage mode in [${supportedModes.join(', ')}]` );
+            throw new TypeError( `You must specify at least one storage mode in [${LocalCache.STORAGES.join(', ')}]` );
         }
 
         return Sequence.all( steps ).then( () => data );
     }
 
     get( key, modes, options = {} ) {
-        modes || ( modes = supportedModes );
+        modes || ( modes = LocalCache.STORAGES );
 
         const steps = [];
 
         for( let mode of modes ) {
             if( !this[ mode ] ) {
-                throw new TypeError( `Unexcepted storage mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
+                throw new TypeError( `Unexcepted storage mode "${mode}", excepted one of: ${LocalCache.STORAGES.join( ', ' )}` );
             }
             steps.push( () => this[ mode ].get( key, options ) );
         }
@@ -80,13 +74,13 @@ class LocalCache {
     }
 
     delete( key, modes ) {
-        modes || ( modes = supportedModes );
+        modes || ( modes = LocalCache.STORAGES );
 
         const steps = [];
 
         for( let mode of modes ) {
             if( !this[ mode ] ) {
-                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
+                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${LocalCache.STORAGES.join( ', ' )}` );
             }
             steps.push( () => this[ mode ].delete( key ) );
         }
@@ -94,13 +88,13 @@ class LocalCache {
     }
 
     clear( modes ) {
-        modes || ( modes = supportedModes );
+        modes || ( modes = LocalCache.STORAGES );
 
         const steps = [];
 
         for( let mode of modes ) {
             if( !this[ mode ] ) {
-                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
+                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${LocalCache.STORAGES.join( ', ' )}` );
             }
             steps.push( () => this[ mode ].clear() );
         }
@@ -166,11 +160,13 @@ class LocalCache {
 
         const steps = [];
 
-        for( let mode of supportedModes ) {
+        for( let mode of LocalCache.STORAGES ) {
             steps.push( this[ mode ].clean( check ) );
         }
         return Promise.all( steps );
     }
 }
+
+LocalCache.STORAGES = [ 'page', 'session', 'persistent' ];
 
 export default LocalCache;

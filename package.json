@@ -1,6 +1,6 @@
 {
   "name": "@lvchengbin/localcache",
-  "version": "0.0.2",
+  "version": "0.1.3",
   "description": "",
   "keywords": [
     "local",
@@ -54,8 +54,8 @@
   "author": "LvChengbin",
   "license": "MIT",
   "dependencies": {
-    "@lvchengbin/is": "0.0.8",
-    "@lvchengbin/promise": "^1.0.10",
-    "@lvchengbin/sequence": "0.1.1"
+    "@lvchengbin/is": "0.0.9",
+    "@lvchengbin/promise": "^1.1.0",
+    "@lvchengbin/sequence": "0.1.2"
   }
 }

@@ -236,10 +236,6 @@ function promiseReject( promise, value ) {
 
 var isString = str => typeof str === 'string' || str instanceof String;
 
-var isAsyncFunction$1 = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
-
-var isFunction$1 = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction$1( fn );
-
 var isRegExp = reg => ({}).toString.call( reg ) === '[object RegExp]';
 
 class EventEmitter {
@@ -301,7 +297,7 @@ class EventEmitter {
         let checker;
         if( isString( rule ) ) {
             checker = name => rule === name;
-        } else if( isFunction$1( rule ) ) {
+        } else if( isFunction( rule ) ) {
             checker = rule;
         } else if( isRegExp( rule ) ) {
             checker = name => {
@@ -319,12 +315,6 @@ class EventEmitter {
         }
     }
 }
-
-var isAsyncFunction$2 = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
-
-var isFunction$2 = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction$2( fn );
-
-var isPromise$1 = p => p && isFunction$2( p.then );
 
 function isUndefined() {
     return arguments.length > 0 && typeof arguments[ 0 ] === 'undefined';
@@ -370,7 +360,7 @@ class Sequence extends EventEmitter {
     append( steps ) {
         const dead = this.index >= this.steps.length;
 
-        if( isFunction$2( steps ) ) {
+        if( isFunction( steps ) ) {
             this.steps.push( steps );
         } else {
             for( let step of steps ) {
@@ -431,7 +421,7 @@ class Sequence extends EventEmitter {
              * if the step function doesn't return a promise instance,
              * create a resolved promise instance with the returned value as its value
              */
-            if( !isPromise$1( promise ) ) {
+            if( !isPromise( promise ) ) {
                 promise = Promise$1.resolve( promise );
             }
             return promise.then( value => {
@@ -536,10 +526,6 @@ Sequence.Error = class {
 
 var isObject = obj => obj && typeof obj === 'object' && !Array.isArray( obj );
 
-function isUndefined$1() {
-    return arguments.length > 0 && typeof arguments[ 0 ] === 'undefined';
-}
-
 var isNumber = ( n, strict = false ) => {
     if( ({}).toString.call( n ).toLowerCase() === '[object number]' ) {
         return true;
@@ -548,13 +534,7 @@ var isNumber = ( n, strict = false ) => {
     return !isNaN( parseFloat( n ) ) && isFinite( n )  && !/\.$/.test( n );
 };
 
-var isAsyncFunction$3 = fn => ( {} ).toString.call( fn ) === '[object AsyncFunction]';
-
-var isFunction$3 = fn => ({}).toString.call( fn ) === '[object Function]' || isAsyncFunction$3( fn );
-
 var isDate = date => ({}).toString.call( date ) === '[object Date]';
-
-var isString$1 = str => typeof str === 'string' || str instanceof String;
 
 var md5 = ( () => {
     const safe_add = (x, y) => {
@@ -714,7 +694,7 @@ class Storage {
 
         for( let method of abstracts ) {
 
-            if( !isFunction$3( this[ method ] ) ) {
+            if( !isFunction( this[ method ] ) ) {
                 throw new TypeError( `The method "${method}" must be declared in every class extends from Cache` );
             }
         }
@@ -722,7 +702,7 @@ class Storage {
 
     format( data, options = {} ) {
         let string = true;
-        if( !isString$1( data ) ) {
+        if( !isString( data ) ) {
             string = false;
             data = JSON.stringify( data );
         }
@@ -1116,12 +1096,6 @@ var Persistent$1 = Persistent;
 /**
  * please don't change the order of items in this array.
  */
-const supportedModes = [
-    'page',
-    'session',
-    'persistent'
-];
-
 class LocalCache {
     constructor( name ) {
         if( !name ) {
@@ -1138,7 +1112,7 @@ class LocalCache {
 
         const steps = [];
 
-        for( let mode of supportedModes ) {
+        for( let mode of LocalCache.STORAGES ) {
             if( !options[ mode ] ) continue;
 
             let opts = options[ mode ];
@@ -1149,11 +1123,11 @@ class LocalCache {
                 opts = {};
             }
 
-            if( !isUndefined$1( options.type ) ) {
+            if( !isUndefined( options.type ) ) {
                 opts.type = options.type;
             }
 
-            if( !isUndefined$1( options.extra ) ) {
+            if( !isUndefined( options.extra ) ) {
                 opts.extra = options.extra;
             }
             
@@ -1161,20 +1135,20 @@ class LocalCache {
         }
 
         if( !steps.length ) {
-            throw new TypeError( `You must specify at least one storage mode in [${supportedModes.join(', ')}]` );
+            throw new TypeError( `You must specify at least one storage mode in [${LocalCache.STORAGES.join(', ')}]` );
         }
 
         return Sequence.all( steps ).then( () => data );
     }
 
     get( key, modes, options = {} ) {
-        modes || ( modes = supportedModes );
+        modes || ( modes = LocalCache.STORAGES );
 
         const steps = [];
 
         for( let mode of modes ) {
             if( !this[ mode ] ) {
-                throw new TypeError( `Unexcepted storage mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
+                throw new TypeError( `Unexcepted storage mode "${mode}", excepted one of: ${LocalCache.STORAGES.join( ', ' )}` );
             }
             steps.push( () => this[ mode ].get( key, options ) );
         }
@@ -1185,13 +1159,13 @@ class LocalCache {
     }
 
     delete( key, modes ) {
-        modes || ( modes = supportedModes );
+        modes || ( modes = LocalCache.STORAGES );
 
         const steps = [];
 
         for( let mode of modes ) {
             if( !this[ mode ] ) {
-                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
+                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${LocalCache.STORAGES.join( ', ' )}` );
             }
             steps.push( () => this[ mode ].delete( key ) );
         }
@@ -1199,13 +1173,13 @@ class LocalCache {
     }
 
     clear( modes ) {
-        modes || ( modes = supportedModes );
+        modes || ( modes = LocalCache.STORAGES );
 
         const steps = [];
 
         for( let mode of modes ) {
             if( !this[ mode ] ) {
-                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${supportedModes.join( ', ' )}` );
+                throw new TypeError( `Unexcepted mode "${mode}", excepted one of: ${LocalCache.STORAGES.join( ', ' )}` );
             }
             steps.push( () => this[ mode ].clear() );
         }
@@ -1219,13 +1193,13 @@ class LocalCache {
 
             const { priority, length, ctime, type } = options;
 
-            if( !isUndefined$1( priority ) ) {
+            if( !isUndefined( priority ) ) {
                 if( data.priority < priority ) {
                     remove = true;
                 }
             }
 
-            if( !remove && !isUndefined$1( length ) ) {
+            if( !remove && !isUndefined( length ) ) {
                 const content = data.data;
                 if( isNumber( length ) ) {
                     if( content.length >= length ) {
@@ -1238,7 +1212,7 @@ class LocalCache {
                 }
             }
 
-            if( !remove && !isUndefined$1( ctime ) ) {
+            if( !remove && !isUndefined( ctime ) ) {
                 if( isDate( ctime ) || isNumber( ctime ) ) {
                     if( data.ctime < +ctime ) {
                         remove = true;
@@ -1260,7 +1234,7 @@ class LocalCache {
                 }
             }
 
-            if( !remove && isFunction$3( options.remove ) ) {
+            if( !remove && isFunction( options.remove ) ) {
                 if( options.remove( data, key ) === true ) {
                     remove = true;
                 }
@@ -1271,12 +1245,14 @@ class LocalCache {
 
         const steps = [];
 
-        for( let mode of supportedModes ) {
+        for( let mode of LocalCache.STORAGES ) {
             steps.push( this[ mode ].clean( check ) );
         }
         return Promise.all( steps );
     }
 }
+
+LocalCache.STORAGES = [ 'page', 'session', 'persistent' ];
 
 return LocalCache;
 

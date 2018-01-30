@@ -85,7 +85,7 @@ localcache.get( 'name', [ 'page', 'persistent' ] ).then( value => {
 
 ### Storage modes
 
-`LocalCache` provides three levels storage mode, `page`, `session` and `persistent`. It is easy to understand the meaning from their names, and you can specify one ore multiple storage for caching your data. Here is some detail information for these three storage mode:
+`LocalCache` provides three levels storage mode, `page`, `session` and `persistent`, you can get the list with `LocalCache.STORAGES`. Obviously, you can understand the meaning from their names, and you can specify one ore multiple storage for caching your data. Here is some detail information for these three storage mode:
 
 
  - **page**

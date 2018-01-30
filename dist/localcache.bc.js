@@ -371,14 +371,6 @@ var isString = (function (str) {
   return typeof str === 'string' || str instanceof String;
 });
 
-var isAsyncFunction$1 = (function (fn) {
-  return {}.toString.call(fn) === '[object AsyncFunction]';
-});
-
-var isFunction$1 = (function (fn) {
-  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction$1(fn);
-});
-
 var isRegExp = (function (reg) {
   return {}.toString.call(reg) === '[object RegExp]';
 });
@@ -465,7 +457,7 @@ var EventEmitter = function () {
                 checker = function checker(name) {
                     return rule === name;
                 };
-            } else if (isFunction$1(rule)) {
+            } else if (isFunction(rule)) {
                 checker = rule;
             } else if (isRegExp(rule)) {
                 checker = function checker(name) {
@@ -485,18 +477,6 @@ var EventEmitter = function () {
     }]);
     return EventEmitter;
 }();
-
-var isAsyncFunction$2 = (function (fn) {
-  return {}.toString.call(fn) === '[object AsyncFunction]';
-});
-
-var isFunction$2 = (function (fn) {
-  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction$2(fn);
-});
-
-var isPromise$1 = (function (p) {
-  return p && isFunction$2(p.then);
-});
 
 function isUndefined () {
     return arguments.length > 0 && typeof arguments[0] === 'undefined';
@@ -552,7 +532,7 @@ var Sequence = function (_EventEmitter) {
         value: function append(steps) {
             var dead = this.index >= this.steps.length;
 
-            if (isFunction$2(steps)) {
+            if (isFunction(steps)) {
                 this.steps.push(steps);
             } else {
                 var _iteratorNormalCompletion = true;
@@ -637,7 +617,7 @@ var Sequence = function (_EventEmitter) {
                  * if the step function doesn't return a promise instance,
                  * create a resolved promise instance with the returned value as its value
                  */
-                if (!isPromise$1(promise)) {
+                if (!isPromise(promise)) {
                     promise = Promise$1.resolve(promise);
                 }
                 return promise.then(function (value) {
@@ -763,10 +743,6 @@ var isObject = (function (obj) {
   return obj && (typeof obj === 'undefined' ? 'undefined' : _typeof(obj)) === 'object' && !Array.isArray(obj);
 });
 
-function isUndefined$1 () {
-    return arguments.length > 0 && typeof arguments[0] === 'undefined';
-}
-
 var isNumber = (function (n) {
     var strict = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
 
@@ -777,20 +753,8 @@ var isNumber = (function (n) {
     return !isNaN(parseFloat(n)) && isFinite(n) && !/\.$/.test(n);
 });
 
-var isAsyncFunction$3 = (function (fn) {
-  return {}.toString.call(fn) === '[object AsyncFunction]';
-});
-
-var isFunction$3 = (function (fn) {
-  return {}.toString.call(fn) === '[object Function]' || isAsyncFunction$3(fn);
-});
-
 var isDate = (function (date) {
   return {}.toString.call(date) === '[object Date]';
-});
-
-var isString$1 = (function (str) {
-  return typeof str === 'string' || str instanceof String;
 });
 
 var md5 = (function () {
@@ -978,7 +942,7 @@ var Storage = function () {
                 var method = _step.value;
 
 
-                if (!isFunction$3(this[method])) {
+                if (!isFunction(this[method])) {
                     throw new TypeError('The method "' + method + '" must be declared in every class extends from Cache');
                 }
             }
@@ -1004,7 +968,7 @@ var Storage = function () {
             var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
             var string = true;
-            if (!isString$1(data)) {
+            if (!isString(data)) {
                 string = false;
                 data = JSON.stringify(data);
             }
@@ -1517,7 +1481,6 @@ var Persistent$1 = Persistent;
 /**
  * please don't change the order of items in this array.
  */
-var supportedModes = ['page', 'session', 'persistent'];
 
 var LocalCache = function () {
     function LocalCache(name) {
@@ -1559,11 +1522,11 @@ var LocalCache = function () {
                         opts = {};
                     }
 
-                    if (!isUndefined$1(options.type)) {
+                    if (!isUndefined(options.type)) {
                         opts.type = options.type;
                     }
 
-                    if (!isUndefined$1(options.extra)) {
+                    if (!isUndefined(options.extra)) {
                         opts.extra = options.extra;
                     }
 
@@ -1572,7 +1535,7 @@ var LocalCache = function () {
                     });
                 };
 
-                for (var _iterator = supportedModes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                for (var _iterator = LocalCache.STORAGES[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                     var _ret = _loop();
 
                     if (_ret === 'continue') continue;
@@ -1593,7 +1556,7 @@ var LocalCache = function () {
             }
 
             if (!steps.length) {
-                throw new TypeError('You must specify at least one storage mode in [' + supportedModes.join(', ') + ']');
+                throw new TypeError('You must specify at least one storage mode in [' + LocalCache.STORAGES.join(', ') + ']');
             }
 
             return Sequence.all(steps).then(function () {
@@ -1607,7 +1570,7 @@ var LocalCache = function () {
 
             var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-            modes || (modes = supportedModes);
+            modes || (modes = LocalCache.STORAGES);
 
             var steps = [];
 
@@ -1620,7 +1583,7 @@ var LocalCache = function () {
                     var mode = _step2.value;
 
                     if (!_this2[mode]) {
-                        throw new TypeError('Unexcepted storage mode "' + mode + '", excepted one of: ' + supportedModes.join(', '));
+                        throw new TypeError('Unexcepted storage mode "' + mode + '", excepted one of: ' + LocalCache.STORAGES.join(', '));
                     }
                     steps.push(function () {
                         return _this2[mode].get(key, options);
@@ -1654,7 +1617,7 @@ var LocalCache = function () {
         value: function _delete(key, modes) {
             var _this3 = this;
 
-            modes || (modes = supportedModes);
+            modes || (modes = LocalCache.STORAGES);
 
             var steps = [];
 
@@ -1667,7 +1630,7 @@ var LocalCache = function () {
                     var mode = _step3.value;
 
                     if (!_this3[mode]) {
-                        throw new TypeError('Unexcepted mode "' + mode + '", excepted one of: ' + supportedModes.join(', '));
+                        throw new TypeError('Unexcepted mode "' + mode + '", excepted one of: ' + LocalCache.STORAGES.join(', '));
                     }
                     steps.push(function () {
                         return _this3[mode].delete(key);
@@ -1699,7 +1662,7 @@ var LocalCache = function () {
         value: function clear(modes) {
             var _this4 = this;
 
-            modes || (modes = supportedModes);
+            modes || (modes = LocalCache.STORAGES);
 
             var steps = [];
 
@@ -1712,7 +1675,7 @@ var LocalCache = function () {
                     var mode = _step4.value;
 
                     if (!_this4[mode]) {
-                        throw new TypeError('Unexcepted mode "' + mode + '", excepted one of: ' + supportedModes.join(', '));
+                        throw new TypeError('Unexcepted mode "' + mode + '", excepted one of: ' + LocalCache.STORAGES.join(', '));
                     }
                     steps.push(function () {
                         return _this4[mode].clear();
@@ -1753,13 +1716,13 @@ var LocalCache = function () {
                     type = options.type;
 
 
-                if (!isUndefined$1(priority)) {
+                if (!isUndefined(priority)) {
                     if (data.priority < priority) {
                         remove = true;
                     }
                 }
 
-                if (!remove && !isUndefined$1(length)) {
+                if (!remove && !isUndefined(length)) {
                     var content = data.data;
                     if (isNumber(length)) {
                         if (content.length >= length) {
@@ -1772,7 +1735,7 @@ var LocalCache = function () {
                     }
                 }
 
-                if (!remove && !isUndefined$1(ctime)) {
+                if (!remove && !isUndefined(ctime)) {
                     if (isDate(ctime) || isNumber(ctime)) {
                         if (data.ctime < +ctime) {
                             remove = true;
@@ -1794,7 +1757,7 @@ var LocalCache = function () {
                     }
                 }
 
-                if (!remove && isFunction$3(options.remove)) {
+                if (!remove && isFunction(options.remove)) {
                     if (options.remove(data, key) === true) {
                         remove = true;
                     }
@@ -1810,7 +1773,7 @@ var LocalCache = function () {
             var _iteratorError5 = undefined;
 
             try {
-                for (var _iterator5 = supportedModes[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                for (var _iterator5 = LocalCache.STORAGES[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                     var _mode = _step5.value;
 
                     steps.push(this[_mode].clean(check));
@@ -1835,6 +1798,8 @@ var LocalCache = function () {
     }]);
     return LocalCache;
 }();
+
+LocalCache.STORAGES = ['page', 'session', 'persistent'];
 
 return LocalCache;
 

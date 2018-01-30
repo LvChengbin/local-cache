@@ -706,6 +706,7 @@ class Storage {
         const input = {
             data,
             type : options.type || 'localcache',
+            mime : options.mime || 'text/plain',
             string,
             priority : options.priority === undefined ? 50 : options.priority,
             ctime : +new Date,
@@ -952,6 +953,7 @@ class IDB extends Storage {
         os.createIndex( 'cookie', 'cookie', { unique : false } );
         os.createIndex( 'priority', 'priority', { unique : false } );
         os.createIndex( 'extra', 'extra', { unique : false } );
+        os.createIndex( 'mime', 'mime', { unique : false } );
     }
 
     store( write = false ) {

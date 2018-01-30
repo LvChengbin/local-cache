@@ -32,6 +32,7 @@ export default class Storage {
         const input = {
             data,
             type : options.type || 'localcache',
+            mime : options.mime || 'text/plain',
             string,
             priority : options.priority === undefined ? 50 : options.priority,
             ctime : +new Date,

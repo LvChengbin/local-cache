@@ -1532,6 +1532,10 @@ var LocalCache = function () {
                         opts.extra = options.extra;
                     }
 
+                    if (!isUndefined(options.mime)) {
+                        opts.mime = options.mime;
+                    }
+
                     steps.push(function () {
                         return _this[mode].set(key, data, opts);
                     });

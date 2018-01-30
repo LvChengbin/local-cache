@@ -1132,6 +1132,10 @@ class LocalCache {
             if( !isUndefined( options.extra ) ) {
                 opts.extra = options.extra;
             }
+
+            if( !isUndefined( options.mime ) ) {
+                opts.mime = options.mime;
+            }
             
             steps.push( () => this[ mode ].set( key, data, opts ) );
         }

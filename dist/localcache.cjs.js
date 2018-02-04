@@ -718,7 +718,7 @@ class Storage {
             mime : options.mime || 'text/plain',
             string,
             priority : options.priority === undefined ? 50 : options.priority,
-            ctime : +new Date,
+            ctime : options.ctime || +new Date,
             lifetime : options.lifetime || 0
         };
 
@@ -798,6 +798,10 @@ class Storage {
     }
 
     output( data, storage ) {
+
+        if( !storage ) {
+            console.error( 'Storage type is required.' );
+        }
 
         if( !data.string ) {
             data.data = JSON.parse( data.data );
@@ -1168,19 +1172,14 @@ class LocalCache {
         return Sequence.any( steps ).then( results => {
             const result = results[ results.length - 1 ];
             const value = result.value;
-            const set = [];
 
-            for( let storage of LocalCache.STORAGES ) {
-                if( storage === result.storage ) break;
+            if( !options.store ) return value;
 
-                options[ storage ] && set.push( () => {
-                    return this.set( key, value.data, {
-                        [ storage ] : options[ storage ]
-                    } );
-                } );
-            }
+            const opts = Object.assign( value, options.store, {
+                [ value.storage ] : false
+            } );
 
-            return Sequence.all( set ).then( () => value );
+            return this.set( key, value.data, opts ).then( () => value );
         } );
     }
 

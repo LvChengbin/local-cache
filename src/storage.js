@@ -35,7 +35,7 @@ export default class Storage {
             mime : options.mime || 'text/plain',
             string,
             priority : options.priority === undefined ? 50 : options.priority,
-            ctime : +new Date,
+            ctime : options.ctime || +new Date,
             lifetime : options.lifetime || 0
         };
 
@@ -115,6 +115,10 @@ export default class Storage {
     }
 
     output( data, storage ) {
+
+        if( !storage ) {
+            console.error( 'Storage type is required.' );
+        }
 
         if( !data.string ) {
             data.data = JSON.parse( data.data );

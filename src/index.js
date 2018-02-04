@@ -75,19 +75,14 @@ class LocalCache {
         return Sequence.any( steps ).then( results => {
             const result = results[ results.length - 1 ];
             const value = result.value;
-            const set = [];
 
-            for( let storage of LocalCache.STORAGES ) {
-                if( storage === result.storage ) break;
+            if( !options.store ) return value;
 
-                options[ storage ] && set.push( () => {
-                    return this.set( key, value.data, {
-                        [ storage ] : options[ storage ]
-                    } );
-                } );
-            }
+            const opts = Object.assign( value, options.store, {
+                [ value.storage ] : false
+            } );
 
-            return Sequence.all( set ).then( () => value );
+            return this.set( key, value.data, opts ).then( () => value );
         } );
     }
 

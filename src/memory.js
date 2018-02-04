@@ -18,13 +18,12 @@ export default class Memory extends Storage {
 
         if( !data ) return Promise.reject();
 
-
         if( this.validate( data, options ) === false ) {
             options.autodelete !== false && this.delete( key );
             return Promise.reject();
         }
 
-        return Promise.resolve( this.output( data ) );
+        return Promise.resolve( this.output( data, 'page' ) );
     }
 
     delete( key ) {

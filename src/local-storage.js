@@ -33,7 +33,7 @@ export default class LocalStorage extends Storage {
             return Promise.reject();
         }
 
-        return Promise.resolve( this.output( data ) );
+        return Promise.resolve( this.output( data, 'persistent' ) );
     }
 
     delete( key ) {

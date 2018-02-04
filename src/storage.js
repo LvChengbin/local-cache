@@ -114,7 +114,7 @@ export default class Storage {
         } );
     }
 
-    output( data ) {
+    output( data, storage ) {
 
         if( !data.string ) {
             data.data = JSON.parse( data.data );
@@ -123,6 +123,8 @@ export default class Storage {
         if( data.extra ) {
             data.extra = JSON.parse( data.extra );
         }
+
+        data.storage = storage;
 
         return data;
     }

@@ -60,7 +60,20 @@ var createClass = function () {
 
 
 
+var defineProperty = function (obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
 
+  return obj;
+};
 
 
 
@@ -690,6 +703,9 @@ Sequence.FAILED = 0;
 Sequence.all = function (steps) {
     var interval = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
+    if (!steps.length) {
+        return Promise$1.resolve([]);
+    }
     var sequence = new Sequence(steps, { interval: interval });
     return new Promise$1(function (resolve, reject) {
         sequence.on('end', function (results) {
@@ -705,6 +721,9 @@ Sequence.all = function (steps) {
 Sequence.chain = function (steps) {
     var interval = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
+    if (!steps.length) {
+        return Promise$1.resolve([]);
+    }
     var sequence = new Sequence(steps, { interval: interval });
     return new Promise$1(function (resolve) {
         sequence.on('end', function (results) {
@@ -716,6 +735,9 @@ Sequence.chain = function (steps) {
 Sequence.any = function (steps) {
     var interval = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
+    if (!steps.length) {
+        return Promise$1.reject([]);
+    }
     var sequence = new Sequence(steps, { interval: interval });
     return new Promise$1(function (resolve, reject) {
         sequence.on('success', function () {
@@ -1111,7 +1133,7 @@ var Storage = function () {
         }
     }, {
         key: 'output',
-        value: function output(data) {
+        value: function output(data, storage) {
 
             if (!data.string) {
                 data.data = JSON.parse(data.data);
@@ -1120,6 +1142,8 @@ var Storage = function () {
             if (data.extra) {
                 data.extra = JSON.parse(data.extra);
             }
+
+            data.storage = storage;
 
             return data;
         }
@@ -1162,7 +1186,7 @@ var Memory = function (_Storage) {
                 return Promise$1.reject();
             }
 
-            return Promise$1.resolve(this.output(data));
+            return Promise$1.resolve(this.output(data, 'page'));
         }
     }, {
         key: 'delete',
@@ -1227,7 +1251,7 @@ var SessionStorage = function (_Storage) {
                 this.delete(key);
                 return Promise$1.reject();
             }
-            return Promise$1.resolve(this.output(data));
+            return Promise$1.resolve(this.output(data, 'session'));
         }
     }, {
         key: 'delete',
@@ -1397,7 +1421,7 @@ var IDB = function (_Storage) {
                             return reject();
                         }
                         delete data.key;
-                        resolve(_this5.output(data));
+                        resolve(_this5.output(data, 'persistent'));
                     };
 
                     request.onerror = function (e) {
@@ -1585,7 +1609,7 @@ var LocalCache = function () {
             var _iteratorError2 = undefined;
 
             try {
-                var _loop2 = function _loop2() {
+                var _loop3 = function _loop3() {
                     var mode = _step2.value;
 
                     if (!_this2[mode]) {
@@ -1597,7 +1621,7 @@ var LocalCache = function () {
                 };
 
                 for (var _iterator2 = modes[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                    _loop2();
+                    _loop3();
                 }
             } catch (err) {
                 _didIteratorError2 = true;
@@ -1615,58 +1639,54 @@ var LocalCache = function () {
             }
 
             return Sequence.any(steps).then(function (results) {
-                return results[results.length - 1].value;
+                var result = results[results.length - 1];
+                var value = result.value;
+                var set$$1 = [];
+
+                var _iteratorNormalCompletion3 = true;
+                var _didIteratorError3 = false;
+                var _iteratorError3 = undefined;
+
+                try {
+                    var _loop2 = function _loop2() {
+                        var storage = _step3.value;
+
+                        if (storage === result.storage) return 'break';
+
+                        options[storage] && set$$1.push(function () {
+                            return _this2.set(key, value.data, defineProperty({}, storage, options[storage]));
+                        });
+                    };
+
+                    for (var _iterator3 = LocalCache.STORAGES[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                        var _ret2 = _loop2();
+
+                        if (_ret2 === 'break') break;
+                    }
+                } catch (err) {
+                    _didIteratorError3 = true;
+                    _iteratorError3 = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion3 && _iterator3.return) {
+                            _iterator3.return();
+                        }
+                    } finally {
+                        if (_didIteratorError3) {
+                            throw _iteratorError3;
+                        }
+                    }
+                }
+
+                return Sequence.all(set$$1).then(function () {
+                    return value;
+                });
             });
         }
     }, {
         key: 'delete',
         value: function _delete(key, modes) {
             var _this3 = this;
-
-            modes || (modes = LocalCache.STORAGES);
-
-            var steps = [];
-
-            var _iteratorNormalCompletion3 = true;
-            var _didIteratorError3 = false;
-            var _iteratorError3 = undefined;
-
-            try {
-                var _loop3 = function _loop3() {
-                    var mode = _step3.value;
-
-                    if (!_this3[mode]) {
-                        throw new TypeError('Unexcepted mode "' + mode + '", excepted one of: ' + LocalCache.STORAGES.join(', '));
-                    }
-                    steps.push(function () {
-                        return _this3[mode].delete(key);
-                    });
-                };
-
-                for (var _iterator3 = modes[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-                    _loop3();
-                }
-            } catch (err) {
-                _didIteratorError3 = true;
-                _iteratorError3 = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion3 && _iterator3.return) {
-                        _iterator3.return();
-                    }
-                } finally {
-                    if (_didIteratorError3) {
-                        throw _iteratorError3;
-                    }
-                }
-            }
-
-            return Sequence.all(steps);
-        }
-    }, {
-        key: 'clear',
-        value: function clear(modes) {
-            var _this4 = this;
 
             modes || (modes = LocalCache.STORAGES);
 
@@ -1680,11 +1700,11 @@ var LocalCache = function () {
                 var _loop4 = function _loop4() {
                     var mode = _step4.value;
 
-                    if (!_this4[mode]) {
+                    if (!_this3[mode]) {
                         throw new TypeError('Unexcepted mode "' + mode + '", excepted one of: ' + LocalCache.STORAGES.join(', '));
                     }
                     steps.push(function () {
-                        return _this4[mode].clear();
+                        return _this3[mode].delete(key);
                     });
                 };
 
@@ -1702,6 +1722,51 @@ var LocalCache = function () {
                 } finally {
                     if (_didIteratorError4) {
                         throw _iteratorError4;
+                    }
+                }
+            }
+
+            return Sequence.all(steps);
+        }
+    }, {
+        key: 'clear',
+        value: function clear(modes) {
+            var _this4 = this;
+
+            modes || (modes = LocalCache.STORAGES);
+
+            var steps = [];
+
+            var _iteratorNormalCompletion5 = true;
+            var _didIteratorError5 = false;
+            var _iteratorError5 = undefined;
+
+            try {
+                var _loop5 = function _loop5() {
+                    var mode = _step5.value;
+
+                    if (!_this4[mode]) {
+                        throw new TypeError('Unexcepted mode "' + mode + '", excepted one of: ' + LocalCache.STORAGES.join(', '));
+                    }
+                    steps.push(function () {
+                        return _this4[mode].clear();
+                    });
+                };
+
+                for (var _iterator5 = modes[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+                    _loop5();
+                }
+            } catch (err) {
+                _didIteratorError5 = true;
+                _iteratorError5 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
+                        _iterator5.return();
+                    }
+                } finally {
+                    if (_didIteratorError5) {
+                        throw _iteratorError5;
                     }
                 }
             }
@@ -1774,27 +1839,27 @@ var LocalCache = function () {
 
             var steps = [];
 
-            var _iteratorNormalCompletion5 = true;
-            var _didIteratorError5 = false;
-            var _iteratorError5 = undefined;
+            var _iteratorNormalCompletion6 = true;
+            var _didIteratorError6 = false;
+            var _iteratorError6 = undefined;
 
             try {
-                for (var _iterator5 = LocalCache.STORAGES[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                    var _mode = _step5.value;
+                for (var _iterator6 = LocalCache.STORAGES[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                    var _mode = _step6.value;
 
                     steps.push(this[_mode].clean(check));
                 }
             } catch (err) {
-                _didIteratorError5 = true;
-                _iteratorError5 = err;
+                _didIteratorError6 = true;
+                _iteratorError6 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion5 && _iterator5.return) {
-                        _iterator5.return();
+                    if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                        _iterator6.return();
                     }
                 } finally {
-                    if (_didIteratorError5) {
-                        throw _iteratorError5;
+                    if (_didIteratorError6) {
+                        throw _iteratorError6;
                     }
                 }
             }

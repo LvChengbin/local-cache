@@ -73,7 +73,21 @@ class LocalCache {
         }
 
         return Sequence.any( steps ).then( results => {
-            return results[ results.length - 1 ].value;
+            const result = results[ results.length - 1 ];
+            const value = result.value;
+            const set = [];
+
+            for( let storage of LocalCache.STORAGES ) {
+                if( storage === result.storage ) break;
+
+                options[ storage ] && set.push( () => {
+                    return this.set( key, value.data, {
+                        [ storage ] : options[ storage ]
+                    } );
+                } );
+            }
+
+            return Sequence.all( set ).then( () => value );
         } );
     }
 

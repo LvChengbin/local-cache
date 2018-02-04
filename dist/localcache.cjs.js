@@ -479,6 +479,9 @@ Sequence.SUCCEEDED = 1;
 Sequence.FAILED = 0;
 
 Sequence.all = ( steps, interval = 0 ) => {
+    if( !steps.length ) {
+        return Promise$1.resolve( [] );
+    }
     const sequence = new Sequence( steps, { interval } );
     return new Promise$1( ( resolve, reject ) => {
         sequence.on( 'end', results => {
@@ -492,6 +495,9 @@ Sequence.all = ( steps, interval = 0 ) => {
 };
 
 Sequence.chain = ( steps, interval = 0 ) => {
+    if( !steps.length ) {
+        return Promise$1.resolve( [] );
+    }
     const sequence = new Sequence( steps, { interval } );
     return new Promise$1( resolve => {
         sequence.on( 'end', results => {
@@ -501,6 +507,9 @@ Sequence.chain = ( steps, interval = 0 ) => {
 };
 
 Sequence.any = ( steps, interval = 0 ) => {
+    if( !steps.length ) {
+        return Promise$1.reject( [] );
+    }
     const sequence = new Sequence( steps, { interval } );
     return new Promise$1( ( resolve, reject ) => {
         sequence.on( 'success', () => {
@@ -788,7 +797,7 @@ class Storage {
         } );
     }
 
-    output( data ) {
+    output( data, storage ) {
 
         if( !data.string ) {
             data.data = JSON.parse( data.data );
@@ -797,6 +806,8 @@ class Storage {
         if( data.extra ) {
             data.extra = JSON.parse( data.extra );
         }
+
+        data.storage = storage;
 
         return data;
     }
@@ -819,13 +830,12 @@ class Memory extends Storage {
 
         if( !data ) return Promise$1.reject();
 
-
         if( this.validate( data, options ) === false ) {
             options.autodelete !== false && this.delete( key );
             return Promise$1.reject();
         }
 
-        return Promise$1.resolve( this.output( data ) );
+        return Promise$1.resolve( this.output( data, 'page' ) );
     }
 
     delete( key ) {
@@ -875,7 +885,7 @@ class SessionStorage extends Storage {
             this.delete( key );
             return Promise$1.reject();
         }
-        return Promise$1.resolve( this.output( data ) );
+        return Promise$1.resolve( this.output( data, 'session' ) );
     }
 
     delete( key ) {
@@ -1015,7 +1025,7 @@ class IDB extends Storage {
                         return reject();
                     }
                     delete data.key;
-                    resolve( this.output( data ) );
+                    resolve( this.output( data, 'persistent' ) );
                 };
 
                 request.onerror = e => {
@@ -1156,7 +1166,21 @@ class LocalCache {
         }
 
         return Sequence.any( steps ).then( results => {
-            return results[ results.length - 1 ].value;
+            const result = results[ results.length - 1 ];
+            const value = result.value;
+            const set = [];
+
+            for( let storage of LocalCache.STORAGES ) {
+                if( storage === result.storage ) break;
+
+                options[ storage ] && set.push( () => {
+                    return this.set( key, value.data, {
+                        [ storage ] : options[ storage ]
+                    } );
+                } );
+            }
+
+            return Sequence.all( set ).then( () => value );
         } );
     }
 

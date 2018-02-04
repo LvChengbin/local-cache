@@ -316,6 +316,24 @@ localcache.get( 'key', [ 'page', 'persistent' ] ).then( data => {
 } );
 ```
 
+And you can also store the data to a higher storage:
+
+```js
+const localcache = new LocalCache( 'local-cache' );
+localcache.get( 'key', [ 'page', 'persistent' ], {
+    // if the data was found in session storage or persistent storage, it will be stored into page storage.
+    page : true,
+    // if the data was found in persistent storage, it will be stored into session storage.
+    session : {
+        lifetime : 60
+    }
+} ).then( data => {
+    // got data
+} ).catch( () => {
+    // no available data
+} );
+```
+
 **Return value**:
 
 - An already resolved `Promise` if has found out available data from one of the specified storages.

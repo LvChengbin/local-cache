@@ -273,4 +273,17 @@ describe( 'LocalCache', () => {
         ] );
     } );
 
+    it( 'restore data in higher storage', done => {
+        Sequence.chain( [
+            () => lc.set( 'key6', 'value', { persistent : true } ),
+            () => lc.get( 'key6', [ 'page', 'persistent' ], { page : true } ),
+            () => lc.get( 'key6', [ 'page', 'persistent' ], { page : true } ),
+            result => {
+                expect( result.value.storage ).toEqual( 'page' );
+                expect( result.value.data ).toEqual( 'value' );
+                done();
+            }
+        ] );
+    } );
+
 } );

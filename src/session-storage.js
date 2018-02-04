@@ -32,7 +32,7 @@ export default class SessionStorage extends Storage {
             this.delete( key );
             return Promise.reject();
         }
-        return Promise.resolve( this.output( data ) );
+        return Promise.resolve( this.output( data, 'session' ) );
     }
 
     delete( key ) {

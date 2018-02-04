@@ -113,7 +113,7 @@ export default class IDB extends Storage {
                         return reject();
                     }
                     delete data.key;
-                    resolve( this.output( data ) );
+                    resolve( this.output( data, 'persistent' ) );
                 };
 
                 request.onerror = e => {

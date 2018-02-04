@@ -276,7 +276,7 @@ describe( 'LocalCache', () => {
     it( 'restore data in higher storage', done => {
         Sequence.chain( [
             () => lc.set( 'key6', 'value', { persistent : true } ),
-            () => lc.get( 'key6', [ 'page', 'persistent' ], { store : { page : true } } ),
+            () => lc.get( 'key6', [ 'page', 'persistent' ], { page : true } ),
             () => lc.get( 'key6', [ 'page', 'persistent' ] ),
             result => {
                 expect( result.value.storage ).toEqual( 'page' );

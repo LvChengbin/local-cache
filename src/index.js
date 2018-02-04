@@ -76,9 +76,17 @@ class LocalCache {
             const result = results[ results.length - 1 ];
             const value = result.value;
 
-            if( !options.store ) return value;
+            let store = false;
 
-            const opts = Object.assign( value, options.store, {
+            for( const item of LocalCache.STORAGES ) {
+                if( options[ item ] && item !== value.storage ) {
+                    store = true;
+                }
+            }
+
+            if( !store ) return value;
+
+            const opts = Object.assign( value, options, {
                 [ value.storage ] : false
             } );
 

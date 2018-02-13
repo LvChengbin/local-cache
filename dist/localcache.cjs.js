@@ -91,7 +91,11 @@ Promise$1.all = function( promises ) {
 
         let i = 0;
         for( let promise of promises ) {
-            then( promise, remaining = i++ );
+            remaining++;
+            then( promise, i++ );
+        }
+        if( !i ) {
+            resolve( res );
         }
     } );
 };
@@ -1158,6 +1162,12 @@ class LocalCache {
     }
 
     get( key, modes, options = {} ) {
+
+        if( isObject( modes ) ) {
+            modes = LocalCache.STORAGES;
+            options = modes;
+        }
+
         modes || ( modes = LocalCache.STORAGES );
 
         const steps = [];

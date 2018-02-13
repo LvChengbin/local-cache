@@ -210,7 +210,8 @@ Promise$1.all = function (promises) {
             for (var _iterator = promises[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                 var promise = _step.value;
 
-                then(promise, remaining = i++);
+                remaining++;
+                then(promise, i++);
             }
         } catch (err) {
             _didIteratorError = true;
@@ -225,6 +226,10 @@ Promise$1.all = function (promises) {
                     throw _iteratorError;
                 }
             }
+        }
+
+        if (!i) {
+            resolve(res);
         }
     });
 };
@@ -1603,6 +1608,12 @@ var LocalCache = function () {
             var _this2 = this;
 
             var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+
+            if (isObject(modes)) {
+                modes = LocalCache.STORAGES;
+                options = modes;
+            }
 
             modes || (modes = LocalCache.STORAGES);
 

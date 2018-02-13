@@ -61,6 +61,12 @@ class LocalCache {
     }
 
     get( key, modes, options = {} ) {
+
+        if( isObject( modes ) ) {
+            modes = LocalCache.STORAGES;
+            options = modes;
+        }
+
         modes || ( modes = LocalCache.STORAGES );
 
         const steps = [];

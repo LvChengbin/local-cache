@@ -1,5 +1,7 @@
 # LocalCache
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/LvChengbin/localcache.svg)](https://greenkeeper.io/)
+
 A library used for caching data in different levels easily in browsers by specifying validation rules such as lifetime, md5, etc.
 
 <!-- vim-markdown-toc GFM -->

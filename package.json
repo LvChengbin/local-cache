@@ -19,20 +19,20 @@
     "babel-core": "^6.26.0",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-es2015": "^6.24.1",
-    "eslint": "^4.14.0",
-    "jasmine-core": "^2.8.0",
-    "karma": "^2.0.0",
+    "eslint": "^5.8.0",
+    "jasmine-core": "^3.3.0",
+    "karma": "^3.1.1",
     "karma-chrome-launcher": "^2.2.0",
     "karma-es6-shim": "^1.0.0",
     "karma-jasmine": "^1.1.1",
     "karma-phantomjs-launcher": "^1.0.4",
-    "karma-rollup-preprocessor": "^5.0.2",
+    "karma-rollup-preprocessor": "^6.1.0",
     "optimist": "^0.6.1",
     "pre-commit": "^1.2.2",
-    "puppeteer": "^0.13.0",
+    "puppeteer": "^1.10.0",
     "randomstring": "^1.1.5",
-    "rollup": "^0.53.3",
-    "rollup-plugin-babel": "^3.0.3",
+    "rollup": "^0.67.0",
+    "rollup-plugin-babel": "^4.0.3",
     "rollup-plugin-node-resolve": "^3.0.2"
   },
   "scripts": {
@@ -54,7 +54,7 @@
   "author": "LvChengbin",
   "license": "MIT",
   "dependencies": {
-    "@lvchengbin/is": "^0.0.9",
+    "@lvchengbin/is": "^0.0.24",
     "@lvchengbin/promise": "^1.1.3",
     "@lvchengbin/sequence": "^1.0.0"
   }
